@@ -44,17 +44,14 @@ def speak(text):
     except Exception as e:
         print(f"Σφάλμα κατά την αναπαραγωγή ήχου: {e}")
 
-def listen():
+def listen(recognizer, microphone):
     """Listens for audio input from the microphone and converts it to text."""
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
+    with microphone as source:
         print("Ακούω...")
-        r.pause_threshold = 1
-        r.adjust_for_ambient_noise(source, duration=1)
-        audio = r.listen(source)
         try:
+            audio = recognizer.listen(source)
             print("Αναγνώριση...")
-            command = r.recognize_google(audio, language=SPEECH_LANG)
+            command = recognizer.recognize_google(audio, language=SPEECH_LANG)
             print(f"Είπατε: {command}")
             return command.lower()
         except sr.UnknownValueError:
@@ -75,10 +72,10 @@ def get_time():
     time_str = now.strftime("Η ώρα είναι %I:%M %p και η ημερομηνία είναι %A, %d %B %Y")
     speak(time_str)
 
-def get_weather():
+def get_weather(recognizer, microphone):
     """Asks for a city and provides the weather forecast."""
     speak("Για ποια πόλη θέλετε να μάθετε τον καιρό;")
-    city = listen()
+    city = listen(recognizer, microphone)
     if not city:
         speak("Δεν άκουσα το όνομα της πόλης.")
         return
@@ -159,10 +156,20 @@ def main():
     except locale.Error:
         print("Locale 'el_GR.UTF-8' not supported. Using default.")
 
+    recognizer = sr.Recognizer()
+    microphone = sr.Microphone()
+
+    # Configure recognizer
+    recognizer.pause_threshold = 2.0  # Increased from 1.0 based on user feedback
+
+    with microphone as source:
+        print("Ρύθμιση θορύβου περιβάλλοντος...")
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+
     speak("Έλα μου. Τι θες;")
     
     while True:
-        command = listen()
+        command = listen(recognizer, microphone)
         if not command:
             continue
 
@@ -171,7 +178,7 @@ def main():
         elif "ώρα" in command:
             get_time()
         elif "καιρός" in command:
-            get_weather()
+            get_weather(recognizer, microphone)
         elif command.startswith("βρες"):
             search_term = command.replace("βρες", "").strip()
             if not search_term:
