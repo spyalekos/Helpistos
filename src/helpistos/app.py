@@ -1,10 +1,11 @@
 import toga
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW
+from toga.style.pack import COLUMN
 import threading
 import speech_recognition as sr
 from gtts import gTTS
 import os
+import subprocess
 try:
     import wikipedia
 except ImportError:
@@ -16,21 +17,9 @@ from bs4 import BeautifulSoup
 import pyperclip
 import time
 
-import sys
-print(f"DEBUG: sys.path: {sys.path}")
-print(f"DEBUG: 'java' in sys.modules: {'java' in sys.modules}")
-
 try:
     from java import autoclass, dynamic_proxy
-    print("DEBUG: java import SUCCESS")
-except Exception as e:
-    print(f"DEBUG: java import failed: {e}")
-    # Try alternative
-    try:
-        import java
-        print("DEBUG: import java SUCCESS")
-    except Exception as e2:
-         print(f"DEBUG: import java failed too: {e2}")
+except ImportError:
     autoclass = None
     dynamic_proxy = None
 
@@ -100,7 +89,10 @@ class Helpistos(toga.App):
                 # Use system player fallback for Linux/Desktop
                 if os.name == 'posix':
                     # Try mpg123, ffplay, or other available players
-                    os.system(f"mpg123 -q {temp_file} || ffplay -nodisp -autoexit -loglevel quiet {temp_file}")
+                    try:
+                        subprocess.run(["mpg123", "-q", temp_file], check=True)
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", temp_file])
                 elif os.name == 'nt':
                     os.startfile(temp_file)
                 
@@ -165,7 +157,6 @@ class Helpistos(toga.App):
             try:
                 # Check permissions at runtime
                 PackageManager = autoclass('android.content.pm.PackageManager')
-                Manifest = autoclass('android.provider.Settings').System # Fallback if direct Manifest import is tricky
                 # Correct way for Manifest:
                 ManifestPerm = autoclass('android.Manifest$permission')
                 
@@ -263,7 +254,7 @@ class Helpistos(toga.App):
             try:
                 pyperclip.copy(command)
                 self.add_log(f"Αντιγράφηκε: {command}")
-            except:
+            except Exception:
                 pass
 
     def get_weather_logic(self, command):
@@ -271,25 +262,36 @@ class Helpistos(toga.App):
         city = "Athens" # Default or extract from command
         try:
             geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=el&format=json"
-            geo_data = requests.get(geo_url).json()
+            response = requests.get(geo_url)
+            response.raise_for_status()
+            geo_data = response.json()
             if geo_data.get("results"):
                 loc = geo_data["results"][0]
                 temp_url = f"https://api.open-meteo.com/v1/forecast?latitude={loc['latitude']}&longitude={loc['longitude']}&current=temperature_2m,weather_code"
-                w_data = requests.get(temp_url).json()
+                weather_response = requests.get(temp_url)
+                weather_response.raise_for_status()
+                w_data = weather_response.json()
                 temp = w_data["current"]["temperature_2m"]
                 self.speak(f"Στην πόλη {loc['name']}, η θερμοκρασία είναι {temp} βαθμοί.")
-        except:
+        except requests.exceptions.RequestException:
+            self.speak("Σφάλμα δικτύου κατά την ανάκτηση καιρού.")
+        except (KeyError, IndexError):
+            self.speak("Σφάλμα επεξεργασίας δεδομένων καιρού.")
+        except Exception:
             self.speak("Σφάλμα καιρού.")
 
     def get_news_logic(self):
         try:
             url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
             resp = requests.get(url)
+            resp.raise_for_status()
             soup = BeautifulSoup(resp.text, 'xml')
-            items = soup.find_all('item')[:2]
+            items = soup.find_all('item', limit=2)
             for item in items:
                 self.speak(item.title.text)
-        except:
+        except requests.exceptions.RequestException:
+            self.speak("Σφάλμα δικτύου κατά την ανάκτηση ειδήσεων.")
+        except Exception:
             self.speak("Σφάλμα ειδήσεων.")
 
 def main():

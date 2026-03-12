@@ -123,7 +123,7 @@ def get_news():
         # Explicitly use the lxml parser for robustness
         soup = BeautifulSoup(response.text, 'lxml-xml')
 
-        items = soup.find_all('item')
+        items = soup.find_all('item', limit=2)
         if not items:
             # This case might happen if the RSS structure changes
             speak("Δεν βρέθηκαν άρθρα ειδήσεων στο feed.")
@@ -208,7 +208,7 @@ def main():
                 with keyboard.pressed(Key.ctrl):
                     keyboard.press('v')
                     keyboard.release('v')
-            except Exception as e:
+            except (RuntimeError, Exception) as e:
                 with open("paste_error.log", "w", encoding="utf-8") as f:
                     f.write(f"An error occurred during paste with pynput: {e}")
 
