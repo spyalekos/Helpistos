@@ -1,0 +1,51 @@
+[project]
+name = "helpistos"
+version = "0.1.0"
+description = "Greek Voice Assistant"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    "toga",
+    "gtts",
+    "speechrecognition",
+    "requests",
+    "beautifulsoup4",
+    "pyperclip"
+]
+
+[project.scripts]
+helpistos = "helpistos.__main__:main"
+
+[tool.briefcase]
+project_name = "Helpistos"
+bundle = "com.example"
+version = "0.1.0"
+display_name = "Helpistos"
+author = "User"
+author_email = "user@example.com"
+
+[tool.briefcase.app.helpistos]
+executable_name = "helpistos"
+sources = ["src/helpistos"]
+
+[tool.briefcase.app.helpistos.linux]
+requires = []
+
+[tool.briefcase.app.helpistos.windows]
+requires = []
+
+[tool.briefcase.app.helpistos.android]
+requires = [
+    "toga-android",
+    "gtts",
+    "speechrecognition",
+    "requests",
+    "beautifulsoup4",
+    "pyperclip"
+]
+
+permissions = [
+    "android.permission.RECORD_AUDIO",
+    "android.permission.INTERNET"
+]

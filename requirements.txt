@@ -1,0 +1,13 @@
+SpeechRecognition
+gTTS
+playsound==1.2.2
+wikipedia
+requests
+beautifulsoup4
+pyautogui
+pynput
+lxml
+
+pyinstaller
+pyaudio
+flet[all]
