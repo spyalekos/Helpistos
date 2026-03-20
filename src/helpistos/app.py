@@ -1,6 +1,6 @@
 import toga
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW
+from toga.style.pack import COLUMN
 import threading
 import speech_recognition as sr
 from gtts import gTTS
@@ -25,12 +25,6 @@ try:
     print("DEBUG: java import SUCCESS")
 except Exception as e:
     print(f"DEBUG: java import failed: {e}")
-    # Try alternative
-    try:
-        import java
-        print("DEBUG: import java SUCCESS")
-    except Exception as e2:
-         print(f"DEBUG: import java failed too: {e2}")
     autoclass = None
     dynamic_proxy = None
 
@@ -165,7 +159,6 @@ class Helpistos(toga.App):
             try:
                 # Check permissions at runtime
                 PackageManager = autoclass('android.content.pm.PackageManager')
-                Manifest = autoclass('android.provider.Settings').System # Fallback if direct Manifest import is tricky
                 # Correct way for Manifest:
                 ManifestPerm = autoclass('android.Manifest$permission')
                 
@@ -263,7 +256,7 @@ class Helpistos(toga.App):
             try:
                 pyperclip.copy(command)
                 self.add_log(f"Αντιγράφηκε: {command}")
-            except:
+            except Exception:
                 pass
 
     def get_weather_logic(self, command):
@@ -278,7 +271,7 @@ class Helpistos(toga.App):
                 w_data = requests.get(temp_url).json()
                 temp = w_data["current"]["temperature_2m"]
                 self.speak(f"Στην πόλη {loc['name']}, η θερμοκρασία είναι {temp} βαθμοί.")
-        except:
+        except Exception:
             self.speak("Σφάλμα καιρού.")
 
     def get_news_logic(self):
@@ -289,7 +282,7 @@ class Helpistos(toga.App):
             items = soup.find_all('item')[:2]
             for item in items:
                 self.speak(item.title.text)
-        except:
+        except Exception:
             self.speak("Σφάλμα ειδήσεων.")
 
 def main():
