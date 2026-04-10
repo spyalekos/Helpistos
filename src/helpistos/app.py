@@ -263,7 +263,8 @@ class Helpistos(toga.App):
             try:
                 pyperclip.copy(command)
                 self.add_log(f"Αντιγράφηκε: {command}")
-            except:
+            except Exception as e:
+                self.add_log(f"Copy Error: {e}")
                 pass
 
     def get_weather_logic(self, command):
@@ -278,7 +279,7 @@ class Helpistos(toga.App):
                 w_data = requests.get(temp_url).json()
                 temp = w_data["current"]["temperature_2m"]
                 self.speak(f"Στην πόλη {loc['name']}, η θερμοκρασία είναι {temp} βαθμοί.")
-        except:
+        except Exception:
             self.speak("Σφάλμα καιρού.")
 
     def get_news_logic(self):
@@ -289,7 +290,7 @@ class Helpistos(toga.App):
             items = soup.find_all('item')[:2]
             for item in items:
                 self.speak(item.title.text)
-        except:
+        except Exception:
             self.speak("Σφάλμα ειδήσεων.")
 
 def main():
