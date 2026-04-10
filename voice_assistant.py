@@ -9,8 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
+import traceback
 
 # --- Configuration ---
 # Set the language for Wikipedia and speech recognition
@@ -144,9 +144,9 @@ def get_news():
     except requests.exceptions.RequestException as e:
         print(f"DEBUG: Request failed: {e}")
         speak("Συγγνώμη, δεν μπορώ να συνδεθώ στην υπηρεσία ειδήσεων.")
-    except Exception as e:
+    except Exception:
         # Print the full error for debugging
-        print(f"An unexpected error occurred in get_news: {e}")
+        traceback.print_exc()
         speak("Παρουσιάστηκε ένα σφάλμα κατά την ανάκτηση των ειδήσεων.")
 
 # --- Main Loop ---
