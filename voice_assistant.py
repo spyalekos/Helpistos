@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
 
 # --- Configuration ---
