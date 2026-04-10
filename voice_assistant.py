@@ -81,8 +81,14 @@ def get_weather(recognizer, microphone):
         return
         
     try:
-        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=el&format=json"
-        geo_response = requests.get(geo_url)
+        geo_url = "https://geocoding-api.open-meteo.com/v1/search"
+        geo_params = {
+            "name": city,
+            "count": 1,
+            "language": "el",
+            "format": "json"
+        }
+        geo_response = requests.get(geo_url, params=geo_params)
         geo_response.raise_for_status()
         geo_data = geo_response.json()
 
@@ -95,8 +101,13 @@ def get_weather(recognizer, microphone):
         longitude = location["longitude"]
         found_city_name = location["name"]
 
-        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,weather_code"
-        weather_response = requests.get(weather_url)
+        weather_url = "https://api.open-meteo.com/v1/forecast"
+        weather_params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": "temperature_2m,weather_code"
+        }
+        weather_response = requests.get(weather_url, params=weather_params)
         weather_response.raise_for_status()
         weather_data = weather_response.json()
         

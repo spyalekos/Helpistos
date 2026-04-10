@@ -270,12 +270,23 @@ class Helpistos(toga.App):
         # Extremely simplified for the port
         city = "Athens" # Default or extract from command
         try:
-            geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=el&format=json"
-            geo_data = requests.get(geo_url).json()
+            geo_url = "https://geocoding-api.open-meteo.com/v1/search"
+            geo_params = {
+                "name": city,
+                "count": 1,
+                "language": "el",
+                "format": "json"
+            }
+            geo_data = requests.get(geo_url, params=geo_params).json()
             if geo_data.get("results"):
                 loc = geo_data["results"][0]
-                temp_url = f"https://api.open-meteo.com/v1/forecast?latitude={loc['latitude']}&longitude={loc['longitude']}&current=temperature_2m,weather_code"
-                w_data = requests.get(temp_url).json()
+                temp_url = "https://api.open-meteo.com/v1/forecast"
+                temp_params = {
+                    "latitude": loc['latitude'],
+                    "longitude": loc['longitude'],
+                    "current": "temperature_2m,weather_code"
+                }
+                w_data = requests.get(temp_url, params=temp_params).json()
                 temp = w_data["current"]["temperature_2m"]
                 self.speak(f"Στην πόλη {loc['name']}, η θερμοκρασία είναι {temp} βαθμοί.")
         except:
