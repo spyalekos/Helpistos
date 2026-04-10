@@ -9,13 +9,18 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
 
 # --- Configuration ---
 # Set the language for Wikipedia and speech recognition
 WIKI_LANG = "el"
 SPEECH_LANG = "el-GR"
+
+# Initialize a global session for news fetching to enable connection pooling
+NEWS_SESSION = requests.Session()
+NEWS_SESSION.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+})
 
 # --- Data ---
 WMO_CODES_GREEK = {
@@ -114,10 +119,7 @@ def get_news():
     """Fetches and reads the top 2 news headlines from Google News Greece."""
     try:
         url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(url, headers=headers)
+        response = NEWS_SESSION.get(url)
         response.raise_for_status()
         
         # Explicitly use the lxml parser for robustness
