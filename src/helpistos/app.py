@@ -5,6 +5,7 @@ import threading
 import speech_recognition as sr
 from gtts import gTTS
 import os
+import subprocess
 try:
     import wikipedia
 except ImportError:
@@ -94,7 +95,13 @@ class Helpistos(toga.App):
                 # Use system player fallback for Linux/Desktop
                 if os.name == 'posix':
                     # Try mpg123, ffplay, or other available players
-                    os.system(f"mpg123 -q {temp_file} || ffplay -nodisp -autoexit -loglevel quiet {temp_file}")
+                    try:
+                        subprocess.run(["mpg123", "-q", temp_file], check=True)
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        try:
+                            subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", temp_file], check=True)
+                        except (subprocess.CalledProcessError, FileNotFoundError):
+                            pass
                 elif os.name == 'nt':
                     os.startfile(temp_file)
                 
