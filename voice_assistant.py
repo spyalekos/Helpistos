@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
 
 # --- Configuration ---
@@ -148,9 +147,9 @@ def get_news():
             speak("Δεν μπόρεσα να βρω τους τίτλους των ειδήσεων.")
             return
 
-        speak("Οι δύο κυριότερες ειδήσεις είναι:")
-        for headline in headlines:
-            speak(headline)
+        intro = "Οι δύο κυριότερες ειδήσεις είναι: "
+        full_news = intro + ". ".join(headlines)
+        speak(full_news)
 
     except requests.exceptions.RequestException as e:
         print(f"DEBUG: Request failed: {e}")

@@ -287,8 +287,14 @@ class Helpistos(toga.App):
             resp = requests.get(url)
             soup = BeautifulSoup(resp.text, 'xml')
             items = soup.find_all('item')[:2]
-            for item in items:
-                self.speak(item.title.text)
+            if not items:
+                self.speak("Δεν βρέθηκαν άρθρα ειδήσεων.")
+                return
+
+            headlines = [item.title.text for item in items]
+            intro = "Οι δύο κυριότερες ειδήσεις είναι: "
+            full_news = intro + ". ".join(headlines)
+            self.speak(full_news)
         except Exception:
             self.speak("Σφάλμα ειδήσεων.")
 
