@@ -5,6 +5,8 @@ import threading
 import speech_recognition as sr
 from gtts import gTTS
 import os
+import tempfile
+import subprocess
 try:
     import wikipedia
 except ImportError:
@@ -86,23 +88,37 @@ class Helpistos(toga.App):
     def speak(self, text):
         self.add_log(f"Assistant: {text}")
         def run_speak():
+            temp_file_path = None
             try:
                 tts = gTTS(text=text, lang=WIKI_LANG)
-                temp_file = "temp_speech.mp3"
-                tts.save(temp_file)
+                with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+                    temp_file_path = f.name
+
+                tts.save(temp_file_path)
                 
                 # Use system player fallback for Linux/Desktop
                 if os.name == 'posix':
                     # Try mpg123, ffplay, or other available players
-                    os.system(f"mpg123 -q {temp_file} || ffplay -nodisp -autoexit -loglevel quiet {temp_file}")
+                    # Using subprocess.run for security and robustness
+                    try:
+                        subprocess.run(["mpg123", "-q", temp_file_path], check=True)
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        try:
+                            subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", temp_file_path], check=True)
+                        except (subprocess.CalledProcessError, FileNotFoundError):
+                            pass
                 elif os.name == 'nt':
-                    os.startfile(temp_file)
+                    os.startfile(temp_file_path)
                 
                 time.sleep(1) # Give it a second to play
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
             except Exception as e:
                 self.add_log(f"Speak Error: {e}")
+            finally:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    try:
+                        os.remove(temp_file_path)
+                    except Exception:
+                        pass
 
         threading.Thread(target=run_speak, daemon=True).start()
 

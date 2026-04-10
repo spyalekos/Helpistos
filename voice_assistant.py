@@ -2,6 +2,7 @@ import speech_recognition as sr
 from gtts import gTTS
 from playsound import playsound
 import os
+import tempfile
 import wikipedia
 import datetime
 import locale
@@ -9,7 +10,6 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
 
 # --- Configuration ---
@@ -35,14 +35,23 @@ WMO_CODES_GREEK = {
 # --- Core Functions ---
 def speak(text):
     """Converts text to speech using gTTS and plays it."""
+    temp_file_path = None
     try:
         tts = gTTS(text=text, lang=WIKI_LANG)
-        temp_file = "temp_speech.mp3"
-        tts.save(temp_file)
-        playsound(temp_file, block=True)
-        os.remove(temp_file)
+        # Use NamedTemporaryFile to create a unique temporary file
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            temp_file_path = f.name
+
+        tts.save(temp_file_path)
+        playsound(temp_file_path, block=True)
     except Exception as e:
         print(f"Σφάλμα κατά την αναπαραγωγή ήχου: {e}")
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except Exception:
+                pass
 
 def listen(recognizer, microphone):
     """Listens for audio input from the microphone and converts it to text."""
