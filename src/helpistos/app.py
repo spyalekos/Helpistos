@@ -5,10 +5,6 @@ import threading
 import speech_recognition as sr
 from gtts import gTTS
 import os
-try:
-    import wikipedia
-except ImportError:
-    wikipedia = None
 import datetime
 import locale
 import requests
