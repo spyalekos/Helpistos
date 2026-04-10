@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
 
 # --- Configuration ---
@@ -82,7 +81,7 @@ def get_weather(recognizer, microphone):
         
     try:
         geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=el&format=json"
-        geo_response = requests.get(geo_url)
+        geo_response = requests.get(geo_url, timeout=10)
         geo_response.raise_for_status()
         geo_data = geo_response.json()
 
@@ -96,7 +95,7 @@ def get_weather(recognizer, microphone):
         found_city_name = location["name"]
 
         weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,weather_code"
-        weather_response = requests.get(weather_url)
+        weather_response = requests.get(weather_url, timeout=10)
         weather_response.raise_for_status()
         weather_data = weather_response.json()
         
@@ -117,7 +116,7 @@ def get_news():
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
         # Explicitly use the lxml parser for robustness

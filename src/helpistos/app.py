@@ -264,11 +264,11 @@ class Helpistos(toga.App):
         city = "Athens" # Default or extract from command
         try:
             geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=el&format=json"
-            geo_data = requests.get(geo_url).json()
+            geo_data = requests.get(geo_url, timeout=10).json()
             if geo_data.get("results"):
                 loc = geo_data["results"][0]
                 temp_url = f"https://api.open-meteo.com/v1/forecast?latitude={loc['latitude']}&longitude={loc['longitude']}&current=temperature_2m,weather_code"
-                w_data = requests.get(temp_url).json()
+                w_data = requests.get(temp_url, timeout=10).json()
                 temp = w_data["current"]["temperature_2m"]
                 self.speak(f"Στην πόλη {loc['name']}, η θερμοκρασία είναι {temp} βαθμοί.")
         except Exception:
@@ -277,7 +277,7 @@ class Helpistos(toga.App):
     def get_news_logic(self):
         try:
             url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
-            resp = requests.get(url)
+            resp = requests.get(url, timeout=10)
             soup = BeautifulSoup(resp.text, 'xml')
             items = soup.find_all('item')[:2]
             for item in items:
