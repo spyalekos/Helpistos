@@ -279,7 +279,7 @@ class Helpistos(toga.App):
             url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
             resp = requests.get(url)
             soup = BeautifulSoup(resp.text, 'xml')
-            items = soup.find_all('item')[:2]
+            items = soup.find_all('item', limit=2)
             for item in items:
                 self.speak(item.title.text)
         except Exception:

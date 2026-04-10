@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 import pyperclip
 from pynput.keyboard import Key, Controller
-import sys
 import time
 
 # --- Configuration ---
@@ -123,7 +122,7 @@ def get_news():
         # Explicitly use the lxml parser for robustness
         soup = BeautifulSoup(response.text, 'lxml-xml')
 
-        items = soup.find_all('item')
+        items = soup.find_all('item', limit=2)
         if not items:
             # This case might happen if the RSS structure changes
             speak("Δεν βρέθηκαν άρθρα ειδήσεων στο feed.")
@@ -131,7 +130,7 @@ def get_news():
             print(f"DEBUG: Response text: {response.text[:500]}") # Print first 500 chars of response
             return
 
-        headlines = [item.title.text for item in items[:2]]
+        headlines = [item.title.text for item in items]
 
         if not headlines:
             speak("Δεν μπόρεσα να βρω τους τίτλους των ειδήσεων.")
