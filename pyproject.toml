@@ -38,7 +38,6 @@ requires = []
 requires = [
     "toga-android",
     "rubicon-java",
-    "pyjnius",
     "gtts",
     "speechrecognition",
     "requests",
