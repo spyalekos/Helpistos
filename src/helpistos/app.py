@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.8")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.9")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -155,34 +155,46 @@ class Helpistos(toga.App):
         if _dynamic_proxy:
             @_dynamic_proxy("android.speech.RecognitionListener")
             class HelperListener:
-            def onReadyForSpeech(self, params):
-                print("DEBUG: onReadyForSpeech")
-            def onBeginningOfSpeech(self):
-                print("DEBUG: onBeginningOfSpeech")
-            def onRmsChanged(self, rmsdB): pass
-            def onBufferReceived(self, buffer): pass
-            def onEndOfSpeech(self):
-                print("DEBUG: onEndOfSpeech")
-            def onError(self, error):
-                error_codes = {
-                    1: "Network timeout", 2: "Network error", 3: "Audio error",
-                    4: "Server error", 5: "Client error", 6: "Speech timeout",
-                    7: "No match", 8: "Recognizer busy", 9: "Insufficient permissions"
-                }
-                msg = error_codes.get(error, f"Unknown error {error}")
-                print(f"DEBUG: onError: {msg}")
-                error_msg[0] = msg
-                result_event.set()
-            def onResults(self, results):
-                print("DEBUG: onResults")
-                matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if matches and matches.size() > 0:
-                    recognized_text[0] = matches.get(0)
-                    print(f"DEBUG: Recognized: {recognized_text[0]}")
-                result_event.set()
-            def onPartialResults(self, partialResults):
-                print("DEBUG: onPartialResults")
-            def onEvent(self, eventType, params): pass
+                def onReadyForSpeech(self, params):
+                    print("DEBUG: onReadyForSpeech")
+                def onBeginningOfSpeech(self):
+                    print("DEBUG: onBeginningOfSpeech")
+                def onRmsChanged(self, rmsdB): pass
+                def onBufferReceived(self, buffer): pass
+                def onEndOfSpeech(self):
+                    print("DEBUG: onEndOfSpeech")
+                def onError(self, error):
+                    error_codes = {
+                        1: "Network timeout", 2: "Network error", 3: "Audio error",
+                        4: "Server error", 5: "Client error", 6: "Speech timeout",
+                        7: "No match", 8: "Recognizer busy", 9: "Insufficient permissions"
+                    }
+                    msg = error_codes.get(error, f"Unknown error {error}")
+                    print(f"DEBUG: onError: {msg}")
+                    error_msg[0] = msg
+                    result_event.set()
+                def onResults(self, results):
+                    print("DEBUG: onResults")
+                    matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    if matches and matches.size() > 0:
+                        recognized_text[0] = matches.get(0)
+                        print(f"DEBUG: Recognized: {recognized_text[0]}")
+                    result_event.set()
+                def onPartialResults(self, partialResults):
+                    print("DEBUG: onPartialResults")
+                def onEvent(self, eventType, params): pass
+        else:
+            # Fallback if no dynamic_proxy
+            class HelperListener:
+                def onReadyForSpeech(self, params): pass
+                def onBeginningOfSpeech(self): pass
+                def onRmsChanged(self, rmsdB): pass
+                def onBufferReceived(self, buffer): pass
+                def onEndOfSpeech(self): pass
+                def onError(self, error): pass
+                def onResults(self, results): pass
+                def onPartialResults(self, partialResults): pass
+                def onEvent(self, eventType, params): pass
 
         def start_recognition():
             try:
