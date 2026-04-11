@@ -18,11 +18,12 @@ import time
 
 try:
     from java import autoclass, dynamic_proxy
-    print("DEBUG: java import SUCCESS")
-except Exception as e:
-    # We will handle missing java module within the methods to avoid startup crashes
-    autoclass = None
-    dynamic_proxy = None
+except Exception:
+    try:
+        from rubicon.java import autoclass, dynamic_proxy
+    except Exception:
+        autoclass = None
+        dynamic_proxy = None
 
 # --- Configuration ---
 WIKI_LANG = "el"
@@ -66,7 +67,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.3")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.4")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -110,9 +111,12 @@ class Helpistos(toga.App):
         # Local imports ensure we only try this when we know we are on Android
         try:
             from java import autoclass, dynamic_proxy
-        except ImportError:
-            self.add_log("Error: Native Java bridge (Chaquopy) not found.")
-            return
+        except Exception as e1:
+            try:
+                from rubicon.java import autoclass, dynamic_proxy
+            except Exception as e2:
+                self.add_log(f"Error: Java bridge not found.\n(java: {e1})\n(rubicon: {e2})")
+                return
 
         SpeechRecognizer = autoclass('android.speech.SpeechRecognizer')
         RecognizerIntent = autoclass('android.speech.RecognizerIntent')
