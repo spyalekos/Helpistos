@@ -1,6 +1,6 @@
 [project]
 name = "helpistos"
-version = "0.1.0"
+version = "1.0.0"
 description = "Greek Voice Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -11,7 +11,6 @@ dependencies = [
     "speechrecognition",
     "requests",
     "beautifulsoup4",
-    "pyperclip"
 ]
 
 [project.scripts]
@@ -20,8 +19,8 @@ helpistos = "helpistos.__main__:main"
 [tool.briefcase]
 project_name = "Helpistos"
 bundle = "com.example"
-version = "0.1.0"
-display_name = "Helpistos"
+version = "1.0.0"
+display_name = "Helpistos v1.0.0"
 author = "User"
 author_email = "user@example.com"
 
@@ -42,7 +41,6 @@ requires = [
     "speechrecognition",
     "requests",
     "beautifulsoup4",
-    "pyperclip"
 ]
 
 permissions = [

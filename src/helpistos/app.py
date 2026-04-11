@@ -9,7 +9,11 @@ import datetime
 import locale
 import requests
 from bs4 import BeautifulSoup
-import pyperclip
+try:
+    import pyperclip
+    HAS_PYPERCLIP = True
+except ImportError:
+    HAS_PYPERCLIP = False
 import time
 
 import sys
@@ -66,7 +70,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=self.formal_name)
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.0")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -248,12 +252,14 @@ class Helpistos(toga.App):
             self.speak("Αντίο!")
             self.exit()
         else:
-            # Fallback to copy/paste if on desktop
-            try:
-                pyperclip.copy(command)
-                self.add_log(f"Αντιγράφηκε: {command}")
-            except Exception:
-                pass
+            if HAS_PYPERCLIP:
+                try:
+                    pyperclip.copy(command)
+                    self.add_log(f"Αντιγράφηκε: {command}")
+                except Exception:
+                    self.add_log(f"Δεν κατάλαβα: {command}")
+            else:
+                self.add_log(f"Δεν κατάλαβα: {command}")
 
     def get_weather_logic(self, command):
         # Extremely simplified for the port
