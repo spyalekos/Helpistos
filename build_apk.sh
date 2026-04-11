@@ -34,7 +34,7 @@ if [ ! -d "build/helpistos/android" ]; then
 fi
 
 echo ">>> Updating and Building APK..."
-"$BRIEFCASE" update android
+"$BRIEFCASE" update android -r
 "$BRIEFCASE" build android
 
 echo ">>> Build complete!"

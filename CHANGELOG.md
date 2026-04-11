@@ -1,4 +1,7 @@
 # Changelog
+## 1.0.7
+- Fix: Οριστική επίλυση Java Bridge με Super-Robust imports και διόρθωση Build Script (`update -r`).
+
 ## 1.0.6
 - Fix: Προσθήκη `rubicon-java` στα requirements και προτίμηση Rubicon Bridge για Native Android APIs.
 

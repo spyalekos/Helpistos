@@ -22,8 +22,17 @@ except Exception:
     try:
         from java import autoclass, dynamic_proxy
     except Exception:
-        autoclass = None
-        dynamic_proxy = None
+        try:
+            import java
+            autoclass = getattr(java, 'autoclass', None)
+            dynamic_proxy = getattr(java, 'dynamic_proxy', None)
+        except Exception:
+            try:
+                from jnius import autoclass
+                dynamic_proxy = None # Jnius doesn't have dynamic_proxy in the same way
+            except Exception:
+                autoclass = None
+                dynamic_proxy = None
 
 # --- Configuration ---
 WIKI_LANG = "el"
@@ -67,7 +76,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.6")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.7")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -109,29 +118,57 @@ class Helpistos(toga.App):
 
     def listen_android(self):
         # Local imports ensure we only try this when we know we are on Android
-        try:
-            from rubicon.java import autoclass, dynamic_proxy
-        except Exception as e1:
-            try:
-                from java import autoclass, dynamic_proxy
-            except Exception as e2:
-                self.add_log(f"Error: Java bridge not found.\n(rubicon: {e1})\n(java: {e2})")
-                return
+        # Try ALL possible ways to get autoclass and dynamic_proxy
+        _autoclass = None
+        _dynamic_proxy = None
+        _errors = []
 
-        SpeechRecognizer = autoclass('android.speech.SpeechRecognizer')
-        RecognizerIntent = autoclass('android.speech.RecognizerIntent')
-        Intent = autoclass('android.content.Intent')
+        # 1. Rubicon (BeeWare standard)
+        try:
+            from rubicon.java import autoclass as _autoclass, dynamic_proxy as _dynamic_proxy
+        except Exception as e: _errors.append(f"rubicon: {e}")
+
+        # 2. Chaquopy (java standard)
+        if _autoclass is None:
+            try:
+                from java import autoclass as _autoclass, dynamic_proxy as _dynamic_proxy
+            except Exception as e: _errors.append(f"java_std: {e}")
+
+        # 3. Chaquopy (via import java)
+        if _autoclass is None:
+            try:
+                import java
+                _autoclass = getattr(java, 'autoclass', None)
+                _dynamic_proxy = getattr(java, 'dynamic_proxy', None)
+            except Exception as e: _errors.append(f"java_module: {e}")
+
+        # 4. PyJnius fallback
+        if _autoclass is None:
+            try:
+                from jnius import autoclass as _autoclass
+                _errors.append("pyjnius: imported (no dynamic_proxy)")
+            except Exception as e: _errors.append(f"pyjnius: {e}")
+
+        if _autoclass is None:
+            self.add_log(f"Error: Java bridge not found after all attempts.\n" + "\n".join(_errors))
+            return
+
+        SpeechRecognizer = _autoclass('android.speech.SpeechRecognizer')
+        RecognizerIntent = _autoclass('android.speech.RecognizerIntent')
+        Intent = _autoclass('android.content.Intent')
         
         # Get the MainActivity instance
-        MainActivity = autoclass('org.beeware.android.MainActivity')
+        MainActivity = _autoclass('org.beeware.android.MainActivity')
         context = MainActivity.singleton
 
         result_event = threading.Event()
         recognized_text = [None]
         error_msg = [None]
 
-        @dynamic_proxy("android.speech.RecognitionListener")
-        class HelperListener:
+        # Use the found dynamic_proxy if available
+        if _dynamic_proxy:
+            @_dynamic_proxy("android.speech.RecognitionListener")
+            class HelperListener:
             def onReadyForSpeech(self, params):
                 print("DEBUG: onReadyForSpeech")
             def onBeginningOfSpeech(self):
