@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.11")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.12")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -124,10 +124,10 @@ class Helpistos(toga.App):
         if _autoclass is None:
             try:
                 import java
-                _autoclass = getattr(java, 'autoclass', None)
+                _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
                 _dynamic_proxy = getattr(java, 'dynamic_proxy', None)
                 if _autoclass is None:
-                    _errors.append(f"java_module: found 'java' but no 'autoclass'. Attributes: {dir(java)}")
+                    _errors.append(f"java_module: found 'java' but no 'autoclass' or 'jclass'. Attributes: {dir(java)}")
             except Exception as e: _errors.append(f"java_module: {e}")
 
         # 4. PyJnius (Explicitly added in v1.0.11)

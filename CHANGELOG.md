@@ -1,3 +1,6 @@
+## 1.0.12
+- Fix: Οριστική επίλυση Java Bridge με χρήση του `jclass` (fallback για autoclass).
+
 ## 1.0.11
 - Fix: Προσθήκη `pyjnius` και ενισχυμένο debugging του module `java`.
 
