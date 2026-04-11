@@ -1,4 +1,8 @@
 # Changelog
+## 1.0.8
+- Fix: Διόρθωση crash στην εκκίνηση (lazy java initialization).
+- Fix: Συγχρονισμός εσωτερικής έκδοσης APK και μετονομασία αρχείου.
+
 ## 1.0.7
 - Fix: Οριστική επίλυση Java Bridge με Super-Robust imports και διόρθωση Build Script (`update -r`).
 

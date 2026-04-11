@@ -34,9 +34,25 @@ if [ ! -d "build/helpistos/android" ]; then
 fi
 
 echo ">>> Updating and Building APK..."
+
+# Sync version in build.gradle
+GRADLE_FILE="build/helpistos/android/gradle/app/build.gradle"
+APP_VERSION="1.0.8"
+if [ -f "$GRADLE_FILE" ]; then
+    echo ">>> Syncing version in build.gradle to $APP_VERSION"
+    sed -i "s/versionName \".*\"/versionName \"$APP_VERSION\"/" "$GRADLE_FILE"
+fi
+
 "$BRIEFCASE" update android -r
 "$BRIEFCASE" build android
 
 echo ">>> Build complete!"
-echo ">>> APK location:"
-find build -name "*.apk" -type f 2>/dev/null
+echo ">>> Renaming APK..."
+ORIGINAL_APK=$(find build -name "app-debug.apk" -type f | head -n 1)
+if [ -n "$ORIGINAL_APK" ]; then
+    MV_DEST="build/helpistos-v108.apk"
+    cp "$ORIGINAL_APK" "$MV_DEST"
+    echo ">>> APK renamed to: $MV_DEST"
+else
+    echo ">>> ERROR: app-debug.apk not found!"
+fi

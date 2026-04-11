@@ -16,23 +16,9 @@ except ImportError:
     HAS_PYPERCLIP = False
 import time
 
-try:
-    from rubicon.java import autoclass, dynamic_proxy
-except Exception:
-    try:
-        from java import autoclass, dynamic_proxy
-    except Exception:
-        try:
-            import java
-            autoclass = getattr(java, 'autoclass', None)
-            dynamic_proxy = getattr(java, 'dynamic_proxy', None)
-        except Exception:
-            try:
-                from jnius import autoclass
-                dynamic_proxy = None # Jnius doesn't have dynamic_proxy in the same way
-            except Exception:
-                autoclass = None
-                dynamic_proxy = None
+# Java bridge imports moved to lazy initialization in listen_android()
+autoclass = None
+dynamic_proxy = None
 
 # --- Configuration ---
 WIKI_LANG = "el"
@@ -76,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.7")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.8")
         self.main_window.content = main_box
         self.main_window.show()
 
