@@ -66,7 +66,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.2")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.3")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -202,11 +202,35 @@ class Helpistos(toga.App):
 
     def listen_and_process(self):
         import sys
-        # The most reliable way to detect Android in Chaquopy/BeeWare
-        is_android = hasattr(sys, 'getandroidsdk') or 'android' in sys.platform.lower()
+        import os
         
-        print(f"DEBUG: Platform Detection - is_android: {is_android}")
-        print(f"DEBUG: sys.platform: {sys.platform}")
+        # Ultra-robust Android detection
+        is_android = False
+        
+        # Method 1: sys.getandroidsdk
+        if hasattr(sys, 'getandroidsdk'): 
+            is_android = True
+            print("DEBUG: Detected Android via sys.getandroidsdk")
+            
+        # Method 2: os.environ
+        if 'ANDROID_ROOT' in os.environ:
+            is_android = True
+            print("DEBUG: Detected Android via ANDROID_ROOT")
+            
+        # Method 3: sys.platform
+        if 'android' in sys.platform.lower():
+            is_android = True
+            print("DEBUG: Detected Android via sys.platform")
+            
+        # Method 4: Toga platform attribute
+        toga_platform = str(getattr(self, 'platform', 'unknown')).lower()
+        if 'android' in toga_platform:
+            is_android = True
+            print(f"DEBUG: Detected Android via Toga platform: {toga_platform}")
+
+        # Visible debug info for the user
+        self.add_log(f"\n[DEBUG] Platform: {sys.platform} / Toga: {toga_platform}")
+        self.add_log(f"[DEBUG] is_android: {is_android}")
 
         if is_android:
             print("DEBUG: Executing Android/Native recognition path")

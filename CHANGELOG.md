@@ -1,4 +1,7 @@
 # Changelog
+## 1.0.3
+- Fix: Υπερ-ενισχυμένη ανίχνευση Android (4 μέθοδοι) και debug info στην οθόνη.
+
 ## 1.0.2
 - Fix: Οριστική λύση στο detection του Android και απομόνωση του Desktop κώδικα (PyAudio).
 
