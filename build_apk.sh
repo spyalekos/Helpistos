@@ -33,8 +33,9 @@ if [ ! -d "build/helpistos/android" ]; then
     "$BRIEFCASE" create android
 fi
 
-echo ">>> Building APK..."
-"$BRIEFCASE" build android -u
+echo ">>> Updating and Building APK..."
+"$BRIEFCASE" update android
+"$BRIEFCASE" build android
 
 echo ">>> Build complete!"
 echo ">>> APK location:"
