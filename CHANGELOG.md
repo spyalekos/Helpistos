@@ -1,4 +1,10 @@
-# Changelog
+## 1.0.10
+- Fix: Διόρθωση σφάλματος NoneType στην κλήση της Java.
+- Fix: Διασφάλιση συγχρονισμού έκδοσης και χρόνου build.
+
+## 1.0.9
+- Fix: Διόρθωση IndentationError στο app.py.
+
 ## 1.0.8
 - Fix: Διόρθωση crash στην εκκίνηση (lazy java initialization).
 - Fix: Συγχρονισμός εσωτερικής έκδοσης APK και μετονομασία αρχείου.

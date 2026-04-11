@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.9")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.10")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -139,9 +139,14 @@ class Helpistos(toga.App):
             self.add_log(f"Error: Java bridge not found after all attempts.\n" + "\n".join(_errors))
             return
 
-        SpeechRecognizer = _autoclass('android.speech.SpeechRecognizer')
-        RecognizerIntent = _autoclass('android.speech.RecognizerIntent')
-        Intent = _autoclass('android.content.Intent')
+        # Update global references for internal functions
+        global autoclass, dynamic_proxy
+        autoclass = _autoclass
+        dynamic_proxy = _dynamic_proxy
+
+        SpeechRecognizer = autoclass('android.speech.SpeechRecognizer')
+        RecognizerIntent = autoclass('android.speech.RecognizerIntent')
+        Intent = autoclass('android.content.Intent')
         
         # Get the MainActivity instance
         MainActivity = _autoclass('org.beeware.android.MainActivity')
