@@ -62,9 +62,15 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.13")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.14")
         self.main_window.content = main_box
         self.main_window.show()
+
+        # Detect Android flag
+        import sys
+        self.is_android_flag = False
+        if hasattr(sys, 'getandroidsdk') or 'ANDROID_ROOT' in os.environ or 'android' in sys.platform.lower():
+            self.is_android_flag = True
 
         # Try to set locale
         try:
@@ -106,17 +112,41 @@ class Helpistos(toga.App):
         def run_speak():
             try:
                 tts = gTTS(text=text, lang=WIKI_LANG)
-                temp_file = "temp_speech.mp3"
+                temp_file = os.path.join(self.paths.app, "temp_speech.mp3")
                 tts.save(temp_file)
                 
+                # Android Native Player
+                if self.is_android_flag:
+                    try:
+                        import java
+                        _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
+                        if _autoclass:
+                            MediaPlayer = _autoclass('android.media.MediaPlayer')
+                            player = MediaPlayer()
+                            player.setDataSource(temp_file)
+                            player.prepare()
+                            player.start()
+                            
+                            # Wait for playback to finish (estimate)
+                            # A better way would be OnCompletionListener, but this is simpler for now
+                            duration = player.getDuration()
+                            time.sleep((duration / 1000) + 0.5)
+                            player.release()
+                        else:
+                            self.add_log("DEBUG: No Java bridge for MediaPlayer")
+                    except Exception as e:
+                        self.add_log(f"Android Speak Error: {e}")
+                
                 # Use system player fallback for Linux/Desktop
-                if os.name == 'posix':
+                elif os.name == 'posix':
                     # Try mpg123, ffplay, or other available players
                     os.system(f"mpg123 -q {temp_file} || ffplay -nodisp -autoexit -loglevel quiet {temp_file}")
                 elif os.name == 'nt':
                     os.startfile(temp_file)
                 
-                time.sleep(1) # Give it a second to play
+                if not self.is_android_flag:
+                    time.sleep(1) # Give it a second to play on desktop
+                
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
             except Exception as e:
@@ -304,7 +334,7 @@ class Helpistos(toga.App):
         self.add_log(f"\n[DEBUG] Platform: {sys.platform} / Toga: {toga_platform}")
         self.add_log(f"[DEBUG] is_android: {is_android}")
 
-        if is_android:
+        if self.is_android_flag:
             print("DEBUG: Executing Android/Native recognition path")
             self.listen_android()
             return

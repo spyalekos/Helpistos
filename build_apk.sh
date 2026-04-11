@@ -37,7 +37,7 @@ echo ">>> Updating and Building APK..."
 
 # Sync version in build.gradle
 GRADLE_FILE="build/helpistos/android/gradle/app/build.gradle"
-APP_VERSION="1.0.13"
+APP_VERSION="1.0.14"
 if [ -f "$GRADLE_FILE" ]; then
     echo ">>> Syncing version in build.gradle to $APP_VERSION"
     sed -i "s/versionName \".*\"/versionName \"$APP_VERSION\"/" "$GRADLE_FILE"
@@ -50,7 +50,8 @@ echo ">>> Build complete!"
 echo ">>> Renaming APK..."
 ORIGINAL_APK=$(find build -name "app-debug.apk" -type f | head -n 1)
 if [ -n "$ORIGINAL_APK" ]; then
-    MV_DEST="build/helpistos-v1013.apk"
+    CLEAN_VER=$(echo $APP_VERSION | tr -d '.')
+    MV_DEST="build/helpistos-v${CLEAN_VER}.apk"
     cp "$ORIGINAL_APK" "$MV_DEST"
     echo ">>> APK renamed to: $MV_DEST"
 else
