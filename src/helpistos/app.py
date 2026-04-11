@@ -27,7 +27,6 @@ except Exception as e:
     print(f"DEBUG: java import failed: {e}")
     # Try alternative
     try:
-        import java
         print("DEBUG: import java SUCCESS")
     except Exception as e2:
          print(f"DEBUG: import java failed too: {e2}")
@@ -37,6 +36,12 @@ except Exception as e:
 # --- Configuration ---
 WIKI_LANG = "el"
 SPEECH_LANG = "el-GR"
+
+# Initialize a global session for news fetching to enable connection pooling
+NEWS_SESSION = requests.Session()
+NEWS_SESSION.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+})
 
 WMO_CODES_GREEK = {
     0: "Καθαρός ουρανός", 1: "Κυρίως αίθριος", 2: "Μερικώς νεφελώδης", 3: "Νεφελώδης",
@@ -165,7 +170,6 @@ class Helpistos(toga.App):
             try:
                 # Check permissions at runtime
                 PackageManager = autoclass('android.content.pm.PackageManager')
-                Manifest = autoclass('android.provider.Settings').System # Fallback if direct Manifest import is tricky
                 # Correct way for Manifest:
                 ManifestPerm = autoclass('android.Manifest$permission')
                 
@@ -207,23 +211,33 @@ class Helpistos(toga.App):
 
     def listen_and_process(self):
         # Use native Android recognition if on Android
+        is_android = False
         try:
+            # self.platform is the Toga platform identifier
             platform = str(self.platform).lower()
+            if platform == 'android':
+                is_android = True
         except AttributeError:
-            platform = "unknown"
+            # Fallback check if self.platform is not available
+            if 'java' in sys.modules or os.path.exists('/system/bin/app_process'):
+                is_android = True
             
-        print(f"DEBUG: Current platform detected as: {platform}")
+        print(f"DEBUG: Current platform: {platform if 'platform' in locals() else 'unknown'}, is_android: {is_android}")
         print(f"DEBUG: autoclass available: {autoclass is not None}")
         
-        if autoclass and platform == 'android':
-            print("DEBUG: Redirecting to native Android recognition")
-            self.listen_android()
+        if is_android:
+            if autoclass:
+                print("DEBUG: Redirecting to native Android recognition")
+                self.listen_android()
+            else:
+                self.add_log("Error: Οι λειτουργίες Android δεν είναι διαθέσιμες.")
             return
 
         print("DEBUG: Falling back to standard speech_recognition (requires PyAudio)")
 
         r = sr.Recognizer()
         try:
+            # Import Microphone only when needed to avoid PyAudio dependency on Android
             with sr.Microphone() as source:
                 self.status_label.text = "Προσαρμογή θορύβου..."
                 r.adjust_for_ambient_noise(source, duration=1)
@@ -263,7 +277,7 @@ class Helpistos(toga.App):
             try:
                 pyperclip.copy(command)
                 self.add_log(f"Αντιγράφηκε: {command}")
-            except:
+            except Exception:
                 pass
 
     def get_weather_logic(self, command):
@@ -278,18 +292,22 @@ class Helpistos(toga.App):
                 w_data = requests.get(temp_url).json()
                 temp = w_data["current"]["temperature_2m"]
                 self.speak(f"Στην πόλη {loc['name']}, η θερμοκρασία είναι {temp} βαθμοί.")
-        except:
+        except Exception:
             self.speak("Σφάλμα καιρού.")
 
     def get_news_logic(self):
         try:
             url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
-            resp = requests.get(url)
-            soup = BeautifulSoup(resp.text, 'xml')
-            items = soup.find_all('item')[:2]
+            resp = NEWS_SESSION.get(url)
+            # Use lxml-xml for consistency and performance if available, otherwise xml
+            try:
+                soup = BeautifulSoup(resp.text, 'lxml-xml')
+            except Exception:
+                soup = BeautifulSoup(resp.text, 'xml')
+            items = soup.find_all('item', limit=2)
             for item in items:
                 self.speak(item.title.text)
-        except:
+        except Exception:
             self.speak("Σφάλμα ειδήσεων.")
 
 def main():
