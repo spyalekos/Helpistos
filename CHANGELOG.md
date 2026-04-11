@@ -1,4 +1,7 @@
 # Changelog
+## 1.0.1
+- Hotfix: Διόρθωση σφάλματος PyAudio στο Android (lazy load & robust detection).
+
 ## 1.0.0
 - Πλήρης υποστήριξη Android (Native SPEECH_RECOGNITION).
 - Διόρθωση ασυμβατότητας με `pyperclip`.
