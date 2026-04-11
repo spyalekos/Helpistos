@@ -2,7 +2,7 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN
 import threading
-import speech_recognition as sr
+# import speech_recognition as sr  # Moved to lazy import in listen_and_process
 from gtts import gTTS
 import os
 import datetime
@@ -199,21 +199,35 @@ class Helpistos(toga.App):
         self.status_label.text = "Έλα μου. Τι θες;"
 
     def listen_and_process(self):
-        # Use native Android recognition if on Android
+        # Improved Android detection
+        is_android = False
         try:
-            platform = str(self.platform).lower()
-        except AttributeError:
-            platform = "unknown"
-            
-        print(f"DEBUG: Current platform detected as: {platform}")
+            # Check Toga's platform
+            p = str(getattr(self, 'platform', 'unknown')).lower()
+            if 'android' in p:
+                is_android = True
+            # Double check via autoclass (Chaquopy signature)
+            elif autoclass is not None:
+                is_android = True
+        except Exception as e:
+            print(f"DEBUG: Platform detection error: {e}")
+
+        print(f"DEBUG: Final decision - Is Android: {is_android}")
+        print(f"DEBUG: platform string: {getattr(self, 'platform', 'N/A')}")
         print(f"DEBUG: autoclass available: {autoclass is not None}")
-        
-        if autoclass and platform == 'android':
+
+        if is_android and autoclass is not None:
             print("DEBUG: Redirecting to native Android recognition")
             self.listen_android()
             return
 
-        print("DEBUG: Falling back to standard speech_recognition (requires PyAudio)")
+        print("DEBUG: Falling back to standard speech_recognition (Desktop mode)")
+        
+        try:
+            import speech_recognition as sr
+        except ImportError:
+            self.add_log("Error: Η βιβλιοθήκη speech_recognition λείπει.")
+            return
 
         r = sr.Recognizer()
         try:
