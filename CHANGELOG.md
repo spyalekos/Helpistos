@@ -1,3 +1,8 @@
+## 1.0.16
+- Fix: Διαφορετική υλοποίηση Proxy (Listener) για Rubicon και Chaquopy.
+- Fix: Χρήση `FileInputStream` και `FileDescriptor` για αναπαραγωγή ήχου στον `MediaPlayer`.
+- UI: Πρόσθετα logs για την προετοιμασία του ήχου και τη δημιουργία του Proxy.
+
 ## 1.0.15
 - Fix: Κεντρική μέθοδος `get_java_bridge` για ομοιόμορφη ανίχνευση Java (Rubicon, Chaquopy, PyJnius).
 - UI: Βελτιωμένο debugging με αναφορά της μεθόδου Java Bridge στην οθόνη.

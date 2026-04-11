@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.15")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.16")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -143,11 +143,18 @@ class Helpistos(toga.App):
                         _autoclass, _, _method = self.get_java_bridge()
                         if _autoclass:
                             MediaPlayer = _autoclass('android.media.MediaPlayer')
+                            FileInputStream = _autoclass('java.io.FileInputStream')
+                            
+                            self.add_log(f"[DEBUG] Preparing MediaPlayer ({_method})")
                             player = MediaPlayer()
-                            player.setDataSource(temp_file)
+                            
+                            fis = FileInputStream(temp_file)
+                            player.setDataSource(fis.getFD())
                             player.prepare()
                             player.start()
-                            self.add_log(f"[DEBUG] MediaPlayer started ({_method})")
+                            fis.close()
+                            
+                            self.add_log("[DEBUG] MediaPlayer started")
                             
                             duration = player.getDuration()
                             time.sleep((duration / 1000) + 0.5)
@@ -207,50 +214,46 @@ class Helpistos(toga.App):
         recognized_text = [None]
         error_msg = [None]
 
-        # Use the found dynamic_proxy if available
-        if _dynamic_proxy:
+        # Implementation of Listener based on bridge method
+        if _method == "Rubicon":
             @_dynamic_proxy("android.speech.RecognitionListener")
             class HelperListener:
-                def onReadyForSpeech(self, params):
-                    print("DEBUG: onReadyForSpeech")
-                def onBeginningOfSpeech(self):
-                    print("DEBUG: onBeginningOfSpeech")
+                def onReadyForSpeech(self, params): print("DEBUG: onReadyForSpeech")
+                def onBeginningOfSpeech(self): print("DEBUG: onBeginningOfSpeech")
                 def onRmsChanged(self, rmsdB): pass
                 def onBufferReceived(self, buffer): pass
-                def onEndOfSpeech(self):
-                    print("DEBUG: onEndOfSpeech")
+                def onEndOfSpeech(self): print("DEBUG: onEndOfSpeech")
                 def onError(self, error):
-                    error_codes = {
-                        1: "Network timeout", 2: "Network error", 3: "Audio error",
-                        4: "Server error", 5: "Client error", 6: "Speech timeout",
-                        7: "No match", 8: "Recognizer busy", 9: "Insufficient permissions"
-                    }
-                    msg = error_codes.get(error, f"Unknown error {error}")
-                    print(f"DEBUG: onError: {msg}")
-                    error_msg[0] = msg
+                    error_msg[0] = f"Error code {error}"
                     result_event.set()
                 def onResults(self, results):
-                    print("DEBUG: onResults")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    if matches and matches.size() > 0:
-                        recognized_text[0] = matches.get(0)
-                        print(f"DEBUG: Recognized: {recognized_text[0]}")
+                    if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()
-                def onPartialResults(self, partialResults):
-                    print("DEBUG: onPartialResults")
-                def onEvent(self, eventType, params): pass
-        else:
-            # Fallback if no dynamic_proxy
-            class HelperListener:
-                def onReadyForSpeech(self, params): pass
-                def onBeginningOfSpeech(self): pass
-                def onRmsChanged(self, rmsdB): pass
-                def onBufferReceived(self, buffer): pass
-                def onEndOfSpeech(self): pass
-                def onError(self, error): pass
-                def onResults(self, results): pass
                 def onPartialResults(self, partialResults): pass
                 def onEvent(self, eventType, params): pass
+            listener = HelperListener()
+        elif _method == "Chaquopy":
+            # In Chaquopy, dynamic_proxy is a base class factory
+            class HelperListener(_dynamic_proxy(_autoclass("android.speech.RecognitionListener"))):
+                def onReadyForSpeech(self, params): print("DEBUG: onReadyForSpeech")
+                def onBeginningOfSpeech(self): print("DEBUG: onBeginningOfSpeech")
+                def onRmsChanged(self, rmsdB): pass
+                def onBufferReceived(self, buffer): pass
+                def onEndOfSpeech(self): print("DEBUG: onEndOfSpeech")
+                def onError(self, error):
+                    error_msg[0] = f"Error code {error}"
+                    result_event.set()
+                def onResults(self, results):
+                    matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
+                    result_event.set()
+                def onPartialResults(self, partialResults): pass
+                def onEvent(self, eventType, params): pass
+            listener = HelperListener()
+        else:
+            self.add_log(f"Error: Unsupported bridge method {_method} for Proxy.")
+            return
 
         def start_recognition():
             try:
@@ -266,7 +269,7 @@ class Helpistos(toga.App):
                     return
                 
                 recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-                recognizer.setRecognitionListener(HelperListener())
+                recognizer.setRecognitionListener(listener)
                 
                 intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
