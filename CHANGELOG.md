@@ -1,4 +1,7 @@
 # Changelog
+## 1.0.6
+- Fix: Προσθήκη `rubicon-java` στα requirements και προτίμηση Rubicon Bridge για Native Android APIs.
+
 ## 1.0.5
 - Ενημέρωση εσωτερικής έκδοσης APK και αυτοματοποίηση update στο build script.
 
