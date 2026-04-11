@@ -1,3 +1,8 @@
+## 1.0.15
+- Fix: Κεντρική μέθοδος `get_java_bridge` για ομοιόμορφη ανίχνευση Java (Rubicon, Chaquopy, PyJnius).
+- UI: Βελτιωμένο debugging με αναφορά της μεθόδου Java Bridge στην οθόνη.
+- Fix: Διασφάλιση ύπαρξης `dynamic_proxy` πριν την έναρξη του STT.
+
 ## 1.0.14
 - Fix: Υλοποίηση `android.media.MediaPlayer` για αναπαραγωγή ήχου στο Android.
 - Fix: Δημιουργία απόλυτου μονοπατιού για τα προσωρινά αρχεία ήχου.

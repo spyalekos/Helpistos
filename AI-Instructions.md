@@ -12,18 +12,17 @@
 2. **Framework:** 
    - Το project χρησιμοποιεί το **BeeWare (Toga)** framework. 
    - Όλες οι UI αλλαγές πρέπει να ακολουθούν τα APIs της Toga.
+   - **Ανίχνευση Android:** Χρησιμοποιούμε το flag `self.is_android_flag` που ορίζεται στο `startup` για καθαρότερο κώδικα.
 
-3. **Android Build (Briefcase):** 
+3. **Android Build & Release:** 
    - Για παραγωγή APK χρησιμοποιούμε **αποκλειστικά** το script `./build_apk.sh`. 
-   - Το script ρυθμίζει αυτόματα:
-     - `JAVA_HOME` και `ANDROID_HOME` (από το briefcase tools cache).
-     - `GRADLE_OPTS="-Xmx2g -Dorg.gradle.daemon=false"`.
-     - Προσθήκη της Python 3.12 του `uv` στο `PATH` (απαραίτητο για το Chaquopy).
-   - Χρησιμοποιούμε ένα dedicated venv (`.briefcase-venv`) για το briefcase για να αποφύγουμε συγκρούσεις με system libs (π.χ. `pygobject`).
+   - Το script ρυθμίζει αυτόματα τα περιβάλλοντα (JAVA_HOME, ANDROID_HOME, PATH για Python 3.12).
+   - **GitHub Release:** Μετά από κάθε επιτυχημένο build και increment έκδοσης, δημιουργούμε Release στο GitHub χρησιμοποιώντας το `gh` CLI:
+     `gh release create vX.Y.Z ./build/helpistos-vXYZ.apk --title "vX.Y.Z" --notes "..."`
 
 4. **Εκδόσεις (Versioning):** 
    - Οι εκδόσεις αυξάνονται κατά **0.0.1**.
-   - Ενημερώνονται σε: `pyproject.toml` (`[project].version` και `[tool.briefcase].version`), `app.py`.
+   - Ενημερώνονται σε: `pyproject.toml`, `src/helpistos/app.py` (MainWindow title), `CHANGELOG.md` και `build_apk.sh`.
 
 5. **Γλώσσα Τεκμηρίωσης:** 
    - Changelog, `README.md` και τεκμηρίωση παραδίδονται **ΠΑΝΤΟΤΕ στα Ελληνικά**.
@@ -32,27 +31,27 @@
 
 1. **TTS (Text-to-Speech):**
    - Χρησιμοποιούμε `gTTS`.
-   - Στο Android, η αναπαραγωγή γίνεται μέσω `android.media.MediaPlayer` (autoclass).
-   - Στο Desktop, χρησιμοποιούμε system players (`mpg123`, `ffplay`) μέσω `os.system`.
+   - **Android:** Χρήση `android.media.MediaPlayer` μέσω `autoclass` (ή fallback σε `jclass` από το module `java`).
+     - **ΠΡΟΣΟΧΗ:** Το αρχείο ήχου πρέπει να ορίζεται με **απόλυτο μονοπάτι** χρησιμοποιώντας το `self.paths.app`.
+     - Απαραίτητη η χρήση `player.prepare()` και `player.start()`.
+     - Πρέπει να γίνεται `player.release()` μετά την αναπαραγωγή για απελευθέρωση πόρων.
+   - **Desktop:** Fallback σε `mpg123` ή `ffplay` μέσω `os.system`.
 
 2. **STT (Speech-to-Text):**
-   - **Android:** Χρησιμοποιούμε το native `android.speech.SpeechRecognizer` μέσω `rubicon-java` (autoclass). Η κλήση `startListening` πρέπει να γίνεται στο UI thread (`runOnUiThread`).
+   - **Android:** Native `android.speech.SpeechRecognizer` μέσω `rubicon-java`. Η κλήση `startListening` πρέπει να γίνεται στο UI thread (`runOnUiThread`).
    - **Desktop:** Fallback στο `speech_recognition` (SR) library.
-
-3. **Permissions:**
-   - Τα permissions (`RECORD_AUDIO`, `INTERNET`) πρέπει να δηλώνονται στο `pyproject.toml` κάτω από `[tool.briefcase.app.helpistos.android]`.
-   - Στο Android, γίνεται runtime check/request για το `RECORD_AUDIO`.
 
 ## Πιθανά Προβλήματα & Σημεία Προσοχής (Gotchas)
 
-1. **Chaquopy & Python Version:** 
-   - Το Chaquopy απαιτεί την αντίστοιχη έκδοση Python (3.12) στο `PATH` του host κατά το build.
-2. **UI Thread (Android):** 
-   - Οποιαδήποτε αλληλεπίδραση με native Android APIs (SpeechRecognizer, MediaPlayer) πρέπει να διασφαλίζεται ότι τρέχει στο σωστό thread.
-3. **Clipboard:** 
-   - Το `pyperclip` αποτυγχάνει σε Android (έλλειψη X11/Wayland). Πάντα χρησιμοποιούμε guards.
-4. **Build Memory:** 
-   - Το APK build είναι ενεργοβόρο. Αν αποτύχει το Gradle λόγω μνήμης, επιβεβαιώνουμε τα `GRADLE_OPTS` στο `build_apk.sh`.
+1. **Paths στο Android:** 
+   - Ποτέ μην χρησιμοποιείτε σχετικά μονοπάτια (π.χ. `"temp.mp3"`) για εγγραφή αρχείων στο Android. Χρησιμοποιείτε πάντα `os.path.join(self.paths.app, "filename")`.
+2. **UI Thread:** 
+   - Οποιαδήποτε αλληλεπίδραση με native Android APIs (SpeechRecognizer, MediaPlayer) πρέπει να διασφαλίζεται ότι τρέχει στο σωστό thread αν απαιτείται από το API.
+3. **Chaquopy:** 
+   - Απαιτεί Python 3.12 στο PATH κατά το build. Το `build_apk.sh` το φροντίζει αυτόματα αν η Python βρίσκεται στο standard uv path.
+4. **Clipboard:** 
+   - Το `pyperclip` αποτυγχάνει σε Android. Πάντα χρησιμοποιούμε guards.
 
 ---
 *Όταν ο χρήστης ζητά αλλαγές σ' αυτό το project, ξεκινάμε με γνώμονα αυτούς τους κανόνες.*
+

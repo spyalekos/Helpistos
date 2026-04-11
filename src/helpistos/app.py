@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.14")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.15")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -71,6 +71,29 @@ class Helpistos(toga.App):
         self.is_android_flag = False
         if hasattr(sys, 'getandroidsdk') or 'ANDROID_ROOT' in os.environ or 'android' in sys.platform.lower():
             self.is_android_flag = True
+
+        # Helper for Java Bridge
+        def get_java_bridge():
+            _autoclass = None
+            _dynamic_proxy = None
+            _method = "None"
+            try:
+                from rubicon.java import autoclass as _autoclass, dynamic_proxy as _dynamic_proxy
+                _method = "Rubicon"
+            except:
+                try:
+                    import java
+                    _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
+                    _dynamic_proxy = getattr(java, 'dynamic_proxy', None)
+                    _method = "Chaquopy"
+                except:
+                    try:
+                        from jnius import autoclass as _autoclass
+                        _method = "PyJnius"
+                    except: pass
+            return _autoclass, _dynamic_proxy, _method
+        
+        self.get_java_bridge = get_java_bridge
 
         # Try to set locale
         try:
@@ -81,10 +104,9 @@ class Helpistos(toga.App):
         # Request Android permissions at startup
         def request_initial_permissions():
             try:
-                # Use local discovery to avoid NoneType issues
-                import java
-                _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
+                _autoclass, _, _method = self.get_java_bridge()
                 if _autoclass:
+                    self.add_log(f"[DEBUG] Java Bridge detect: {_method}")
                     PackageManager = _autoclass('android.content.pm.PackageManager')
                     ManifestPerm = _autoclass('android.Manifest$permission')
                     MainActivity = _autoclass('org.beeware.android.MainActivity')
@@ -97,12 +119,12 @@ class Helpistos(toga.App):
                 print(f"DEBUG: Startup Permission Error: {e}")
 
         # Run on UI thread if possible
-        try:
-            import java
-            MainActivity = (getattr(java, 'autoclass', None) or getattr(java, 'jclass', None))('org.beeware.android.MainActivity')
-            MainActivity.singleton.runOnUiThread(request_initial_permissions)
-        except:
-            pass
+        if self.is_android_flag:
+            try:
+                _autoclass, _, _ = self.get_java_bridge()
+                MainActivity = _autoclass('org.beeware.android.MainActivity')
+                MainActivity.singleton.runOnUiThread(request_initial_permissions)
+            except: pass
 
     def add_log(self, text):
         self.output_text.value += f"\n{text}"
@@ -118,22 +140,20 @@ class Helpistos(toga.App):
                 # Android Native Player
                 if self.is_android_flag:
                     try:
-                        import java
-                        _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
+                        _autoclass, _, _method = self.get_java_bridge()
                         if _autoclass:
                             MediaPlayer = _autoclass('android.media.MediaPlayer')
                             player = MediaPlayer()
                             player.setDataSource(temp_file)
                             player.prepare()
                             player.start()
+                            self.add_log(f"[DEBUG] MediaPlayer started ({_method})")
                             
-                            # Wait for playback to finish (estimate)
-                            # A better way would be OnCompletionListener, but this is simpler for now
                             duration = player.getDuration()
                             time.sleep((duration / 1000) + 0.5)
                             player.release()
                         else:
-                            self.add_log("DEBUG: No Java bridge for MediaPlayer")
+                            self.add_log("Error: Java bridge not found for MediaPlayer")
                     except Exception as e:
                         self.add_log(f"Android Speak Error: {e}")
                 
@@ -159,45 +179,18 @@ class Helpistos(toga.App):
         threading.Thread(target=self.listen_and_process, daemon=True).start()
 
     def listen_android(self):
-        # Local imports ensure we only try this when we know we are on Android
-        # Try ALL possible ways to get autoclass and dynamic_proxy
-        _autoclass = None
-        _dynamic_proxy = None
-        _errors = []
-
-        # 1. Rubicon (BeeWare standard)
-        try:
-            from rubicon.java import autoclass as _autoclass, dynamic_proxy as _dynamic_proxy
-        except Exception as e: _errors.append(f"rubicon: {e}")
-
-        # 2. Chaquopy (java standard)
-        if _autoclass is None:
-            try:
-                from java import autoclass as _autoclass, dynamic_proxy as _dynamic_proxy
-            except Exception as e: _errors.append(f"java_std: {e}")
-
-        # 3. Chaquopy (via import java)
-        if _autoclass is None:
-            try:
-                import java
-                _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
-                _dynamic_proxy = getattr(java, 'dynamic_proxy', None)
-                if _autoclass is None:
-                    _errors.append(f"java_module: found 'java' but no 'autoclass' or 'jclass'. Attributes: {dir(java)}")
-            except Exception as e: _errors.append(f"java_module: {e}")
-
-        # 4. PyJnius (Explicitly added in v1.0.11)
-        if _autoclass is None:
-            try:
-                from jnius import autoclass as _autoclass
-                _errors.append("pyjnius: imported 'autoclass' successfully (no dynamic_proxy)")
-            except Exception as e: _errors.append(f"jnius_explicit: {e}")
+        # Use helper for bridge discovery
+        _autoclass, _dynamic_proxy, _method = self.get_java_bridge()
 
         if _autoclass is None:
-            self.add_log(f"Error: Java bridge not found after all attempts.\n" + "\n".join(_errors))
+            self.add_log("Error: Java bridge not found for STT.")
             return
 
-        # Update global references for internal functions
+        if _dynamic_proxy is None:
+            self.add_log(f"Error: dynamic_proxy not available on bridge {_method}")
+            return
+
+        self.add_log(f"[DEBUG] Using STT bridge: {_method}")
         global autoclass, dynamic_proxy
         autoclass = _autoclass
         dynamic_proxy = _dynamic_proxy
