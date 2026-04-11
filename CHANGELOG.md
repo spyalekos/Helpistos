@@ -1,4 +1,7 @@
 # Changelog
+## 1.0.2
+- Fix: Οριστική λύση στο detection του Android και απομόνωση του Desktop κώδικα (PyAudio).
+
 ## 1.0.1
 - Hotfix: Διόρθωση σφάλματος PyAudio στο Android (lazy load & robust detection).
 

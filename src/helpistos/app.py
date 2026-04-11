@@ -16,15 +16,11 @@ except ImportError:
     HAS_PYPERCLIP = False
 import time
 
-import sys
-print(f"DEBUG: sys.path: {sys.path}")
-print(f"DEBUG: 'java' in sys.modules: {'java' in sys.modules}")
-
 try:
     from java import autoclass, dynamic_proxy
     print("DEBUG: java import SUCCESS")
 except Exception as e:
-    print(f"DEBUG: java import failed: {e}")
+    # We will handle missing java module within the methods to avoid startup crashes
     autoclass = None
     dynamic_proxy = None
 
@@ -70,7 +66,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.1")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.2")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -111,7 +107,13 @@ class Helpistos(toga.App):
         threading.Thread(target=self.listen_and_process, daemon=True).start()
 
     def listen_android(self):
-        # Class-level imports to avoid issues on non-Android platforms
+        # Local imports ensure we only try this when we know we are on Android
+        try:
+            from java import autoclass, dynamic_proxy
+        except ImportError:
+            self.add_log("Error: Native Java bridge (Chaquopy) not found.")
+            return
+
         SpeechRecognizer = autoclass('android.speech.SpeechRecognizer')
         RecognizerIntent = autoclass('android.speech.RecognizerIntent')
         Intent = autoclass('android.content.Intent')
@@ -199,34 +201,30 @@ class Helpistos(toga.App):
         self.status_label.text = "Έλα μου. Τι θες;"
 
     def listen_and_process(self):
-        # Improved Android detection
-        is_android = False
-        try:
-            # Check Toga's platform
-            p = str(getattr(self, 'platform', 'unknown')).lower()
-            if 'android' in p:
-                is_android = True
-            # Double check via autoclass (Chaquopy signature)
-            elif autoclass is not None:
-                is_android = True
-        except Exception as e:
-            print(f"DEBUG: Platform detection error: {e}")
+        import sys
+        # The most reliable way to detect Android in Chaquopy/BeeWare
+        is_android = hasattr(sys, 'getandroidsdk') or 'android' in sys.platform.lower()
+        
+        print(f"DEBUG: Platform Detection - is_android: {is_android}")
+        print(f"DEBUG: sys.platform: {sys.platform}")
 
-        print(f"DEBUG: Final decision - Is Android: {is_android}")
-        print(f"DEBUG: platform string: {getattr(self, 'platform', 'N/A')}")
-        print(f"DEBUG: autoclass available: {autoclass is not None}")
-
-        if is_android and autoclass is not None:
-            print("DEBUG: Redirecting to native Android recognition")
+        if is_android:
+            print("DEBUG: Executing Android/Native recognition path")
             self.listen_android()
             return
 
-        print("DEBUG: Falling back to standard speech_recognition (Desktop mode)")
-        
+        # Desktop Fallback
+        print("DEBUG: Executing Desktop/Fallback recognition path")
         try:
             import speech_recognition as sr
         except ImportError:
             self.add_log("Error: Η βιβλιοθήκη speech_recognition λείπει.")
+            return
+
+        try:
+            import pyaudio
+        except ImportError:
+            self.add_log("Error: Το PyAudio λείπει (απαραίτητο για Desktop).")
             return
 
         r = sr.Recognizer()
