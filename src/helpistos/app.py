@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.12")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.13")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -71,6 +71,32 @@ class Helpistos(toga.App):
             locale.setlocale(locale.LC_TIME, 'el_GR.UTF-8')
         except locale.Error:
             print("Locale 'el_GR.UTF-8' not supported.")
+            
+        # Request Android permissions at startup
+        def request_initial_permissions():
+            try:
+                # Use local discovery to avoid NoneType issues
+                import java
+                _autoclass = getattr(java, 'autoclass', None) or getattr(java, 'jclass', None)
+                if _autoclass:
+                    PackageManager = _autoclass('android.content.pm.PackageManager')
+                    ManifestPerm = _autoclass('android.Manifest$permission')
+                    MainActivity = _autoclass('org.beeware.android.MainActivity')
+                    context = MainActivity.singleton
+                    
+                    if context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED:
+                        print("DEBUG: Requesting RECORD_AUDIO at startup")
+                        context.requestPermissions([ManifestPerm.RECORD_AUDIO], 1)
+            except Exception as e:
+                print(f"DEBUG: Startup Permission Error: {e}")
+
+        # Run on UI thread if possible
+        try:
+            import java
+            MainActivity = (getattr(java, 'autoclass', None) or getattr(java, 'jclass', None))('org.beeware.android.MainActivity')
+            MainActivity.singleton.runOnUiThread(request_initial_permissions)
+        except:
+            pass
 
     def add_log(self, text):
         self.output_text.value += f"\n{text}"
@@ -211,10 +237,10 @@ class Helpistos(toga.App):
                 ManifestPerm = autoclass('android.Manifest$permission')
                 
                 if context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED:
-                    print("DEBUG: Requesting RECORD_AUDIO permission")
-                    context.requestPermissions([ManifestPerm.RECORD_AUDIO], 1)
-                    # We might need to wait for result or user to re-press, 
-                    # but for now let's hope it's granted or that this triggers the dialog.
+                    print("DEBUG: RECORD_AUDIO not granted. Cannot listen.")
+                    error_msg[0] = "Παρακαλώ δώστε άδεια μικροφώνου."
+                    result_event.set()
+                    return
                 
                 recognizer = SpeechRecognizer.createSpeechRecognizer(context)
                 recognizer.setRecognitionListener(HelperListener())
