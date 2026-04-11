@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.10")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.11")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -126,14 +126,16 @@ class Helpistos(toga.App):
                 import java
                 _autoclass = getattr(java, 'autoclass', None)
                 _dynamic_proxy = getattr(java, 'dynamic_proxy', None)
+                if _autoclass is None:
+                    _errors.append(f"java_module: found 'java' but no 'autoclass'. Attributes: {dir(java)}")
             except Exception as e: _errors.append(f"java_module: {e}")
 
-        # 4. PyJnius fallback
+        # 4. PyJnius (Explicitly added in v1.0.11)
         if _autoclass is None:
             try:
                 from jnius import autoclass as _autoclass
-                _errors.append("pyjnius: imported (no dynamic_proxy)")
-            except Exception as e: _errors.append(f"pyjnius: {e}")
+                _errors.append("pyjnius: imported 'autoclass' successfully (no dynamic_proxy)")
+            except Exception as e: _errors.append(f"jnius_explicit: {e}")
 
         if _autoclass is None:
             self.add_log(f"Error: Java bridge not found after all attempts.\n" + "\n".join(_errors))
