@@ -1,3 +1,6 @@
+## 1.0.22
+- Feature: Αυτόματο άνοιγμα των Ρυθμίσεων Εφαρμογής (Application Settings) σε περίπτωση που το σύστημα Android απορρίψει την αίτηση αδειών μικροφώνου, διευκολύνοντας την χειροκίνητη ενεργοποίησή τους από τον χρήστη.
+
 ## 1.0.21
 - Fix: Διόρθωση Fatal Exception κατά την ενημέρωση του UI (status label) από background thread μέσω `call_soon_threadsafe`.
 - Fix: Διασφάλιση εμφάνισης του παραθύρου δικαιωμάτων μικροφώνου (Java String Array casting για Chaquopy).
