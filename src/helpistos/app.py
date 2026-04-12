@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.26")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.27")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -376,16 +376,26 @@ class Helpistos(toga.App):
                     result_event.set()
                     return
 
-                recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-                recognizer.setRecognitionListener(listener)
-                self.add_log("[DEBUG] STT: Recognizer created")
+                if not hasattr(app_self, '_recognizer') or app_self._recognizer is None:
+                    app_self._recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                    app_self._recognizer.setRecognitionListener(listener)
+                    self.add_log("[DEBUG] STT: New Recognizer created")
+                else:
+                    self.add_log("[DEBUG] STT: Reusing Recognizer")
+                    
+                # Robustly cancel any hanging sessions before starting a new one
+                try: 
+                    app_self._recognizer.cancel()
+                except: 
+                    pass
                 
                 intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, SPEECH_LANG)
+                intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.getPackageName())
                 
                 self.add_log("[DEBUG] STT: Calling startListening")
-                recognizer.startListening(intent)
+                app_self._recognizer.startListening(intent)
             except Exception as e:
                 self.add_log(f"[DEBUG] STT Start Exception: {e}")
                 error_msg[0] = str(e)

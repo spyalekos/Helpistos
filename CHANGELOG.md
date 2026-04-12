@@ -1,3 +1,6 @@
+## 1.0.27
+- Fix: Επίλυση του `ERROR_RECOGNIZER_BUSY` (Error 8) μέσω επαναχρησιμοποίησης του `SpeechRecognizer` instance και κλήσης της `cancel()` πριν από κάθε νέα έναρξη αναγνώρισης.
+
 ## 1.0.26
 - Fix: Επίλυση του `AttributeError: 'HelperListener' object has no attribute 'add_log'` κατά την εκκίνηση του STT (Chaquopy/Rubicon proxy classes scoping alias).
 
