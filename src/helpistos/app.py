@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.27")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.28")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -301,15 +301,32 @@ class Helpistos(toga.App):
                 def onBufferReceived(self, buffer): pass
                 def onEndOfSpeech(self): app_self.add_log("[DEBUG] STT: EndOfSpeech")
                 def onError(self, error):
-                    app_self.add_log(f"[DEBUG] STT Error: {error}")
-                    error_msg[0] = f"Error code {error}"
+                    # Map common error codes to user-friendly messages
+                    errors = {
+                        1: "Network timeout",
+                        2: "Network error",
+                        3: "Audio recording error",
+                        4: "Server error",
+                        5: "Client error",
+                        6: "Speech timeout (No speech heard)",
+                        7: "Δεν κατάλαβα τι είπες. Δοκίμασε ξανά.",
+                        8: "Recognizer busy",
+                        9: "Insufficient permissions"
+                    }
+                    msg = errors.get(error, f"Error code {error}")
+                    app_self.add_log(f"[DEBUG] STT Error: {msg} ({error})")
+                    error_msg[0] = msg
                     result_event.set()
                 def onResults(self, results):
-                    app_self.add_log("[DEBUG] STT: Results")
+                    app_self.add_log("[DEBUG] STT: Final Results received")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()
-                def onPartialResults(self, partialResults): pass
+                def onPartialResults(self, partialResults):
+                    matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    if matches and matches.size() > 0:
+                        partial_text = matches.get(0)
+                        app_self.update_status(f"Ακούω: {partial_text}...")
                 def onEvent(self, eventType, params): pass
             listener = HelperListener()
         elif _method == "Chaquopy":
@@ -321,15 +338,32 @@ class Helpistos(toga.App):
                 def onBufferReceived(self, buffer): pass
                 def onEndOfSpeech(self): app_self.add_log("[DEBUG] STT: EndOfSpeech")
                 def onError(self, error):
-                    app_self.add_log(f"[DEBUG] STT Error: {error}")
-                    error_msg[0] = f"Error code {error}"
+                    # Map common error codes to user-friendly messages
+                    errors = {
+                        1: "Network timeout",
+                        2: "Network error",
+                        3: "Audio recording error",
+                        4: "Server error",
+                        5: "Client error",
+                        6: "Speech timeout (No speech heard)",
+                        7: "Δεν κατάλαβα τι είπες. Δοκίμασε ξανά.",
+                        8: "Recognizer busy",
+                        9: "Insufficient permissions"
+                    }
+                    msg = errors.get(error, f"Error code {error}")
+                    app_self.add_log(f"[DEBUG] STT Error: {msg} ({error})")
+                    error_msg[0] = msg
                     result_event.set()
                 def onResults(self, results):
-                    app_self.add_log("[DEBUG] STT: Results")
+                    app_self.add_log("[DEBUG] STT: Final Results received")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()
-                def onPartialResults(self, partialResults): pass
+                def onPartialResults(self, partialResults):
+                    matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    if matches and matches.size() > 0:
+                        partial_text = matches.get(0)
+                        app_self.update_status(f"Ακούω: {partial_text}...")
                 def onEvent(self, eventType, params): pass
             listener = HelperListener()
         else:
@@ -393,6 +427,8 @@ class Helpistos(toga.App):
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, SPEECH_LANG)
                 intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.getPackageName())
+                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, True)
+                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                 
                 self.add_log("[DEBUG] STT: Calling startListening")
                 app_self._recognizer.startListening(intent)
@@ -409,8 +445,8 @@ class Helpistos(toga.App):
         else:
             self.add_log("Error: context is None, unreachable UI thread.")
         
-        # Wait for result
-        finished = result_event.wait(timeout=15)
+        # Wait for result (increased to 30s)
+        finished = result_event.wait(timeout=30)
         if not finished:
             self.add_log("Error: Η αναγνώριση ομιλίας έληξε (Timeout).")
         elif error_msg[0]:
