@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.29")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.30")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -196,7 +196,9 @@ class Helpistos(toga.App):
         def run_speak():
             try:
                 tts = gTTS(text=text, lang=WIKI_LANG)
-                temp_file = os.path.join(self.paths.app, "temp_speech.mp3")
+                # Use cache path on Android as app path is read-only
+                base_path = self.paths.cache if self.is_android_flag else self.paths.app
+                temp_file = os.path.join(base_path, "temp_speech.mp3")
                 tts.save(temp_file)
                 
                 # Android Native Player
@@ -598,7 +600,8 @@ class Helpistos(toga.App):
     def get_news_logic(self):
         try:
             url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
-            resp = requests.get(url)
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+            resp = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(resp.text, 'xml')
             items = soup.find_all('item')[:2]
             if not items:
@@ -609,7 +612,8 @@ class Helpistos(toga.App):
             intro = "Οι δύο κυριότερες ειδήσεις είναι: "
             full_news = intro + ". ".join(headlines)
             self.speak(full_news)
-        except Exception:
+        except Exception as e:
+            self.add_log(f"[DEBUG] News Error: {e}")
             self.speak("Σφάλμα ειδήσεων.")
 
 def main():
