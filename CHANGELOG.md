@@ -1,3 +1,8 @@
+## 1.0.18
+- Fix: Αλλαγή του `add_log` ώστε να χρησιμοποιεί το `call_soon_threadsafe` για αξιόπιστη εμφάνιση logs από το UI thread.
+- Fix: Απόλυτη θωράκιση της `start_recognition` με καθολικό `try/except` και διαγνωστικά logs στην κορυφή.
+- Fix: Διασφάλιση πρόσβασης στις Java κλάσεις εντός του UI thread closure.
+
 ## 1.0.17
 - UI: Super-Logging για όλα τα Android callbacks απευθείας στην οθόνη.
 - Fix: Thread-safe `add_log` για αποφυγή θεμάτων με background tasks.

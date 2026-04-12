@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.17")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.18")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -127,13 +127,20 @@ class Helpistos(toga.App):
             except: pass
 
     def add_log(self, text):
-        # Thread-safe logging for Toga
-        def update_ui(app):
+        def _sync_log():
             self.output_text.value += f"\n{text}"
-        if hasattr(self, 'main_window') and self.main_window.app:
-            self.main_window.app.add_background_task(update_ui)
-        else:
-            print(f"LOG: {text}")
+        # Thread-safe logging for Toga using the event loop
+        try:
+            if hasattr(self, 'main_window') and self.main_window.app:
+                app = self.main_window.app
+                if hasattr(app, 'loop') and app.loop:
+                    app.loop.call_soon_threadsafe(_sync_log)
+                else:
+                    _sync_log()
+            else:
+                print(f"LOG: {text}")
+        except:
+            print(f"LOG ERROR: {text}")
 
     def speak(self, text):
         self.add_log(f"Assistant: {text}")
@@ -267,40 +274,37 @@ class Helpistos(toga.App):
             return
 
         def start_recognition():
+            self.add_log("[DEBUG] STT: start_recognition beginning")
             try:
-                # Check permissions at runtime
-                PackageManager = autoclass('android.content.pm.PackageManager')
-                # Correct way for Manifest:
-                ManifestPerm = autoclass('android.Manifest$permission')
+                # Diagnostics
+                self.add_log("[DEBUG] STT: checking availability...")
+                is_available = SpeechRecognizer.isRecognitionAvailable(context)
+                self.add_log(f"[DEBUG] STT: Available={is_available}")
                 
-                if context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED:
-                    print("DEBUG: RECORD_AUDIO not granted. Cannot listen.")
-                    error_msg[0] = "Παρακαλώ δώστε άδεια μικροφώνου."
+                PackageManager = autoclass('android.content.pm.PackageManager')
+                ManifestPerm = autoclass('android.Manifest$permission')
+                has_perm = (context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+                self.add_log(f"[DEBUG] STT: Has RECORD_AUDIO={has_perm}")
+
+                if not has_perm:
+                    self.add_log("[DEBUG] STT: Requesting missing permission...")
+                    context.requestPermissions([ManifestPerm.RECORD_AUDIO], 1)
+                    error_msg[0] = "Παρακαλώ δώστε άδεια και δοκιμάστε ξανά."
                     result_event.set()
                     return
-                
-                # Diagnostics
-                is_available = SpeechRecognizer.isRecognitionAvailable(context)
-                self.add_log(f"[DEBUG] Recognition Available: {is_available}")
-                
-                PackageManager = _autoclass('android.content.pm.PackageManager')
-                ManifestPerm = _autoclass('android.Manifest$permission')
-                has_perm = context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                self.add_log(f"[DEBUG] Has RECORD_AUDIO: {has_perm}")
 
                 recognizer = SpeechRecognizer.createSpeechRecognizer(context)
                 recognizer.setRecognitionListener(listener)
-                
-                self.add_log("[DEBUG] Recognizer created and listener set")
+                self.add_log("[DEBUG] STT: Recognizer created")
                 
                 intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, SPEECH_LANG)
                 
-                print("DEBUG: Calling startListening")
+                self.add_log("[DEBUG] STT: Calling startListening")
                 recognizer.startListening(intent)
             except Exception as e:
-                print(f"DEBUG: Exception in start_recognition: {e}")
+                self.add_log(f"[DEBUG] STT Start Exception: {e}")
                 error_msg[0] = str(e)
                 result_event.set()
 
