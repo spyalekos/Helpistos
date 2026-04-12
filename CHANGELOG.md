@@ -1,3 +1,9 @@
+## 1.0.25
+- Fix: Επίλυση σφάλματος `UnboundLocalError: cannot access local variable 'Intent'` το οποίο εμφανίστηκε (μετά την επιτυχή εκχώρηση αδειών) λόγω python variable scope shadowing στη συνάρτηση έναρξης της αναγνώρισης (STT).
+
+## 1.0.24
+- Fix: Διόρθωση του `pyproject.toml` για να γίνεται deploy η Android άδεια μικροφώνου στο `AndroidManifest.xml` (αντικατάσταση του παλιού `.android` list με το νέο cross-platform dictionary `permission` του BeeWare).
+
 ## 1.0.23
 - Fix: Διόρθωση του `pyproject.toml` για να γίνεται deploy η Android άδεια μικροφώνου στο `AndroidManifest.xml` (αντικατάσταση του παλιού `.android` list με το νέο cross-platform dictionary `permission` του BeeWare).
 

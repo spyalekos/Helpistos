@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.24")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.25")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -358,14 +358,14 @@ class Helpistos(toga.App):
                     # Also launch the settings intent to guarantee user can provide permission
                     self.add_log("[DEBUG] STT: Launching Settings App...")
                     try:
-                        Intent = _autoclass('android.content.Intent')
-                        Uri = _autoclass('android.net.Uri')
-                        Settings = _autoclass('android.provider.Settings')
-                        intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        uri = Uri.fromParts("package", context.getPackageName(), None)
-                        intent.setData(uri)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
+                        # Use the outer scope Intent to avoid UnboundLocalError
+                        Uri = getattr(autoclass('android.net.Uri'), 'class_', autoclass('android.net.Uri'))
+                        Settings = autoclass('android.provider.Settings')
+                        settings_intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        uri = autoclass('android.net.Uri').fromParts("package", context.getPackageName(), None)
+                        settings_intent.setData(uri)
+                        settings_intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(settings_intent)
                     except Exception as e:
                         self.add_log(f"[DEBUG] STT: Intent failed: {e}")
                         
