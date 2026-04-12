@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.19")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.20")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -129,25 +129,31 @@ class Helpistos(toga.App):
                     self.add_log(f"[DEBUG] Java Bridge detect: {_method}")
                     PackageManager = _autoclass('android.content.pm.PackageManager')
                     ManifestPerm = _autoclass('android.Manifest$permission')
-                    MainActivity = _autoclass('org.beeware.android.MainActivity')
-                    context = MainActivity.singleton
                     
-                    if context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED:
-                        print("DEBUG: Requesting RECORD_AUDIO at startup")
+                    # Safe Context Retrieval via Toga Backend
+                    context = None
+                    if hasattr(self, 'main_window') and self.main_window.app:
+                        context = self.main_window.app._impl.native
+                    
+                    if context and context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED:
+                        self.add_log("[DEBUG] Requesting RECORD_AUDIO at startup")
                         context.requestPermissions([ManifestPerm.RECORD_AUDIO], 1)
             except Exception as e:
-                print(f"DEBUG: Startup Permission Error: {e}")
+                self.add_log(f"[DEBUG] Startup Permission Error: {e}")
 
         # Run on UI thread if possible
         if self.is_android_flag:
             try:
-                _autoclass, _, _ = self.get_java_bridge()
-                MainActivity = _autoclass('org.beeware.android.MainActivity')
-                context = MainActivity.singleton
-                if context:
-                    runnable = self.get_java_runnable(request_initial_permissions)
-                    context.runOnUiThread(runnable)
-            except: pass
+                # Need to use event loop to ensure main_window._impl is fully constructed
+                if hasattr(self.main_window.app, 'loop'):
+                    def _delayed_perms():
+                        context = self.main_window.app._impl.native
+                        if context:
+                            runnable = self.get_java_runnable(request_initial_permissions)
+                            context.runOnUiThread(runnable)
+                    self.main_window.app.loop.call_soon(_delayed_perms)
+            except Exception as e:
+                self.add_log(f"[DEBUG] Delay Perm Error: {e}")
 
     def add_log(self, text):
         def _sync_log():
@@ -223,6 +229,12 @@ class Helpistos(toga.App):
         threading.Thread(target=self.listen_and_process, daemon=True).start()
 
     def listen_android(self):
+        try:
+            self._listen_android_impl()
+        except Exception as e:
+            self.add_log(f"[CRITICAL] listen_android crashed: {e}")
+
+    def _listen_android_impl(self):
         # Use helper for bridge discovery
         _autoclass, _dynamic_proxy, _method = self.get_java_bridge()
 
@@ -243,9 +255,14 @@ class Helpistos(toga.App):
         RecognizerIntent = autoclass('android.speech.RecognizerIntent')
         Intent = autoclass('android.content.Intent')
         
-        # Get the MainActivity instance
-        MainActivity = _autoclass('org.beeware.android.MainActivity')
-        context = MainActivity.singleton
+        # Get the MainActivity instance via Toga
+        context = None
+        if hasattr(self, 'main_window') and self.main_window.app:
+            context = self.main_window.app._impl.native
+            
+        if not context:
+            self.add_log("[CRITICAL] Could not get Android context via main_window.app._impl.native!")
+            return
 
         result_event = threading.Event()
         recognized_text = [None]

@@ -1,3 +1,8 @@
+## 1.0.20
+- Fix: Καθολικό `try-except` γύρω από όλη τη `listen_android` για τον εντοπισμό σιωπηρών σφαλμάτων.
+- Fix: Αντικατάσταση του παρωχημένου `MainActivity.singleton` με τον επίσημο τρόπο `toga.App.app._impl.native` για την ασφαλή απόκτηση του Android context στο Chaquopy.
+- Fix: Καθυστέρηση κλήσης των αδειών (permissions) για να βεβαιωθούμε ότι έχει δημιουργηθεί το `_impl`.
+
 ## 1.0.19
 - Fix: Υλοποίηση `Runnable` proxy για τη γέφυρα Chaquopy, επιτρέποντας την εκτέλεση κώδικα στο UI Thread (runOnUiThread).
 - Fix: Εφαρμογή του Runnable proxy στην αναγνώριση φωνής και στην αίτηση αδειών.
