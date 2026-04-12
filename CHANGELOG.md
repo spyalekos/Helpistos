@@ -1,3 +1,6 @@
+## 1.0.23
+- Fix: Διόρθωση του `pyproject.toml` για να γίνεται deploy η Android άδεια μικροφώνου στο `AndroidManifest.xml` (αντικατάσταση του παλιού `.android` list με το νέο cross-platform dictionary `permission` του BeeWare).
+
 ## 1.0.22
 - Feature: Αυτόματο άνοιγμα των Ρυθμίσεων Εφαρμογής (Application Settings) σε περίπτωση που το σύστημα Android απορρίψει την αίτηση αδειών μικροφώνου, διευκολύνοντας την χειροκίνητη ενεργοποίησή τους από τον χρήστη.
 

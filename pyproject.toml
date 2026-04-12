@@ -1,6 +1,6 @@
 [project]
 name = "helpistos"
-version = "1.0.22"
+version = "1.0.23"
 description = "Greek Voice Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -19,14 +19,15 @@ helpistos = "helpistos.__main__:main"
 [tool.briefcase]
 project_name = "Helpistos"
 bundle = "com.example"
-version = "1.0.22"
-display_name = "Helpistos v1.0.22"
+version = "1.0.23"
+display_name = "Helpistos v1.0.23"
 author = "User"
 author_email = "user@example.com"
 
 [tool.briefcase.app.helpistos]
 executable_name = "helpistos"
 sources = ["src/helpistos"]
+permission = { microphone = "Το Helpistos χρειάζεται το μικρόφωνο για λειτουργίες Voice Assistant.", network = "Basic network access." }
 
 [tool.briefcase.app.helpistos.linux]
 requires = []
@@ -44,7 +45,3 @@ requires = [
     "beautifulsoup4",
 ]
 
-permissions = [
-    "android.permission.RECORD_AUDIO",
-    "android.permission.INTERNET"
-]
