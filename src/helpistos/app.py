@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.28")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.29")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -287,6 +287,7 @@ class Helpistos(toga.App):
         result_event = threading.Event()
         recognized_text = [None]
         error_msg = [None]
+        last_partial_text = [None]
 
         # Alias self to app_self to use inside HelperListeners
         app_self = self
@@ -326,6 +327,7 @@ class Helpistos(toga.App):
                     matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0:
                         partial_text = matches.get(0)
+                        last_partial_text[0] = partial_text
                         app_self.update_status(f"Ακούω: {partial_text}...")
                 def onEvent(self, eventType, params): pass
             listener = HelperListener()
@@ -363,6 +365,7 @@ class Helpistos(toga.App):
                     matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0:
                         partial_text = matches.get(0)
+                        last_partial_text[0] = partial_text
                         app_self.update_status(f"Ακούω: {partial_text}...")
                 def onEvent(self, eventType, params): pass
             listener = HelperListener()
@@ -451,8 +454,11 @@ class Helpistos(toga.App):
             self.add_log("Error: Η αναγνώριση ομιλίας έληξε (Timeout).")
         elif error_msg[0]:
             self.add_log(f"Error: {error_msg[0]}")
-        elif recognized_text[0]:
-            command = recognized_text[0].lower()
+        elif recognized_text[0] or last_partial_text[0]:
+            command = (recognized_text[0] or last_partial_text[0]).lower()
+            if not recognized_text[0]:
+                self.add_log(f"[DEBUG] STT: Using partial fallback: {command}")
+            
             self.add_log(f"User: {command}")
             self.process_command(command)
         
@@ -530,19 +536,27 @@ class Helpistos(toga.App):
             self.status_label.text = "Έλα μου. Τι θες;"
 
     def process_command(self, command):
-        if "γεια" in command:
-            self.speak("Γεια και σε εσάς!")
-        elif "ώρα" in command:
-            now = datetime.datetime.now()
-            time_str = now.strftime("Η ώρα είναι %I:%M %p και η ημερομηνία είναι %A, %d %B %Y")
-            self.speak(time_str)
-        elif "καιρός" in command:
-            self.speak("Αναζήτηση καιρού...")
-            # Simple weather logic moved here
-            self.get_weather_logic(command)
-        elif "νέα" in command or "ειδήσεις" in command:
+        command = command.lower()
+        
+        if "νέα" in command or "ειδήσεις" in command:
+            self.add_log(f"Executing: News command ({command})")
             self.get_news_logic()
+        elif "καιρός" in command or "καιρό" in command:
+            self.add_log(f"Executing: Weather command ({command})")
+            self.speak("Αναζήτηση καιρού...")
+            self.get_weather_logic(command)
+        elif "ώρα" in command:
+            self.add_log(f"Executing: Time command ({command})")
+            now = datetime.datetime.now()
+            time_str = now.strftime("%H:%M")
+            self.speak(f"Η ώρα είναι {time_str}.")
+        elif "μέρα" in command or "ημερομηνία" in command:
+            self.add_log(f"Executing: Date command ({command})")
+            now = datetime.datetime.now()
+            date_str = now.strftime("%d/%m/%Y")
+            self.speak(f"Σήμερα είναι {date_str}.")
         elif "τέλος" in command or "έξοδος" in command or "στοπ" in command:
+            self.add_log("Executing: Exit command")
             self.speak("Αντίο!")
             self.exit()
         else:

@@ -75,5 +75,14 @@
      ```
    - **Ποτέ** δεν ανανεώνουμε ενδείξεις οθόνης Toga (`self.status_label.text = ...`) απευθείας από background thread, γιατί προκαλείται άμεσο Crash (`Animators may only be run on Looper threads`). Χρησιμοποιούμε ΠΑΝΤΑ: `main_window.app.loop.call_soon_threadsafe(update_ui_func)`.
 
+7. **STT (Speech-to-Text) Tuning & Robustness:**
+   - **Error 8 (Busy):** Συμβαίνει συχνά αν δημιουργούνται πολλαπλά instances ή αν μια συνεδρία δεν έκλεισε. Λύση: Resusable instance και κλήση `recognizer.cancel()` πριν από κάθε `startListening()`.
+   - **Error 7 (No Match):** Συμβαίνει αν το σύστημα δεν "πιάσει" σίγουρες λέξεις. Βελτίωση μέσω: 
+     - Αύξησης `wait(timeout=30)`.
+     - Προσθήκης `intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, True)`.
+     - Προσθήκης `intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)`.
+     - Προσθήκης `intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.getPackageName())`.
+   - **Feedback:** Η χρήση του `onPartialResults` είναι απαραίτητη για να βλέπει ο χρήστης ότι η εφαρμογή όντως "ακούει" σε πραγματικό χρόνο (π.χ. ενημέρωση ενός label).
+
 ---
 *Όταν ο χρήστης ζητά αλλαγές σ' αυτό το project, ξεκινάμε με γνώμονα αυτούς τους κανόνες.*
