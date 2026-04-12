@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.18")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.19")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -101,6 +101,26 @@ class Helpistos(toga.App):
         except locale.Error:
             print("Locale 'el_GR.UTF-8' not supported.")
             
+        # Helper for Java Runnable Proxies
+        def get_java_runnable(func):
+            _autoclass, _dynamic_proxy, _method = self.get_java_bridge()
+            if _method == "Rubicon":
+                @_dynamic_proxy("java.lang.Runnable")
+                class Runnable:
+                    def __init__(self, f): self.f = f
+                    def run(self): self.f()
+                return Runnable(func)
+            elif _method == "Chaquopy":
+                class Runnable(_dynamic_proxy(_autoclass("java.lang.Runnable"))):
+                    def __init__(self, f): 
+                        super().__init__()
+                        self.f = f
+                    def run(self): self.f()
+                return Runnable(func)
+            return func # Fallback
+
+        self.get_java_runnable = get_java_runnable
+        
         # Request Android permissions at startup
         def request_initial_permissions():
             try:
@@ -123,7 +143,10 @@ class Helpistos(toga.App):
             try:
                 _autoclass, _, _ = self.get_java_bridge()
                 MainActivity = _autoclass('org.beeware.android.MainActivity')
-                MainActivity.singleton.runOnUiThread(request_initial_permissions)
+                context = MainActivity.singleton
+                if context:
+                    runnable = self.get_java_runnable(request_initial_permissions)
+                    context.runOnUiThread(runnable)
             except: pass
 
     def add_log(self, text):
@@ -309,7 +332,12 @@ class Helpistos(toga.App):
                 result_event.set()
 
         # SpeechRecognizer MUST be called on the main thread
-        context.runOnUiThread(start_recognition)
+        if context:
+            self.add_log("[DEBUG] STT: Wrapping start_recognition in Runnable proxy")
+            runnable = self.get_java_runnable(start_recognition)
+            context.runOnUiThread(runnable)
+        else:
+            self.add_log("Error: context is None, unreachable UI thread.")
         
         # Wait for result
         finished = result_event.wait(timeout=15)

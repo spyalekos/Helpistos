@@ -1,3 +1,8 @@
+## 1.0.19
+- Fix: Υλοποίηση `Runnable` proxy για τη γέφυρα Chaquopy, επιτρέποντας την εκτέλεση κώδικα στο UI Thread (runOnUiThread).
+- Fix: Εφαρμογή του Runnable proxy στην αναγνώριση φωνής και στην αίτηση αδειών.
+- UI: Πρόσθετο log `[DEBUG] STT: Wrapping start_recognition in Runnable proxy`.
+
 ## 1.0.18
 - Fix: Αλλαγή του `add_log` ώστε να χρησιμοποιεί το `call_soon_threadsafe` για αξιόπιστη εμφάνιση logs από το UI thread.
 - Fix: Απόλυτη θωράκιση της `start_recognition` με καθολικό `try/except` και διαγνωστικά logs στην κορυφή.
