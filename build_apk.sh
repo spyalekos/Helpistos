@@ -37,7 +37,7 @@ echo ">>> Updating and Building APK..."
 
 # Sync version in build.gradle
 GRADLE_FILE="build/helpistos/android/gradle/app/build.gradle"
-APP_VERSION="1.0.16"
+APP_VERSION="1.0.17"
 if [ -f "$GRADLE_FILE" ]; then
     echo ">>> Syncing version in build.gradle to $APP_VERSION"
     sed -i "s/versionName \".*\"/versionName \"$APP_VERSION\"/" "$GRADLE_FILE"

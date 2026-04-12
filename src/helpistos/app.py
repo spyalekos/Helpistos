@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.16")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.17")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -127,7 +127,13 @@ class Helpistos(toga.App):
             except: pass
 
     def add_log(self, text):
-        self.output_text.value += f"\n{text}"
+        # Thread-safe logging for Toga
+        def update_ui(app):
+            self.output_text.value += f"\n{text}"
+        if hasattr(self, 'main_window') and self.main_window.app:
+            self.main_window.app.add_background_task(update_ui)
+        else:
+            print(f"LOG: {text}")
 
     def speak(self, text):
         self.add_log(f"Assistant: {text}")
@@ -140,6 +146,7 @@ class Helpistos(toga.App):
                 # Android Native Player
                 if self.is_android_flag:
                     try:
+                        self.add_log(f"[DEBUG] Check file: {os.path.exists(temp_file)} ({temp_file})")
                         _autoclass, _, _method = self.get_java_bridge()
                         if _autoclass:
                             MediaPlayer = _autoclass('android.media.MediaPlayer')
@@ -218,15 +225,17 @@ class Helpistos(toga.App):
         if _method == "Rubicon":
             @_dynamic_proxy("android.speech.RecognitionListener")
             class HelperListener:
-                def onReadyForSpeech(self, params): print("DEBUG: onReadyForSpeech")
-                def onBeginningOfSpeech(self): print("DEBUG: onBeginningOfSpeech")
+                def onReadyForSpeech(self, params): self.add_log("[DEBUG] STT: Ready")
+                def onBeginningOfSpeech(self): self.add_log("[DEBUG] STT: Beginning")
                 def onRmsChanged(self, rmsdB): pass
                 def onBufferReceived(self, buffer): pass
-                def onEndOfSpeech(self): print("DEBUG: onEndOfSpeech")
+                def onEndOfSpeech(self): self.add_log("[DEBUG] STT: EndOfSpeech")
                 def onError(self, error):
+                    self.add_log(f"[DEBUG] STT Error: {error}")
                     error_msg[0] = f"Error code {error}"
                     result_event.set()
                 def onResults(self, results):
+                    self.add_log("[DEBUG] STT: Results")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()
@@ -236,15 +245,17 @@ class Helpistos(toga.App):
         elif _method == "Chaquopy":
             # In Chaquopy, dynamic_proxy is a base class factory
             class HelperListener(_dynamic_proxy(_autoclass("android.speech.RecognitionListener"))):
-                def onReadyForSpeech(self, params): print("DEBUG: onReadyForSpeech")
-                def onBeginningOfSpeech(self): print("DEBUG: onBeginningOfSpeech")
+                def onReadyForSpeech(self, params): self.add_log("[DEBUG] STT: Ready")
+                def onBeginningOfSpeech(self): self.add_log("[DEBUG] STT: Beginning")
                 def onRmsChanged(self, rmsdB): pass
                 def onBufferReceived(self, buffer): pass
-                def onEndOfSpeech(self): print("DEBUG: onEndOfSpeech")
+                def onEndOfSpeech(self): self.add_log("[DEBUG] STT: EndOfSpeech")
                 def onError(self, error):
+                    self.add_log(f"[DEBUG] STT Error: {error}")
                     error_msg[0] = f"Error code {error}"
                     result_event.set()
                 def onResults(self, results):
+                    self.add_log("[DEBUG] STT: Results")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()
@@ -268,8 +279,19 @@ class Helpistos(toga.App):
                     result_event.set()
                     return
                 
+                # Diagnostics
+                is_available = SpeechRecognizer.isRecognitionAvailable(context)
+                self.add_log(f"[DEBUG] Recognition Available: {is_available}")
+                
+                PackageManager = _autoclass('android.content.pm.PackageManager')
+                ManifestPerm = _autoclass('android.Manifest$permission')
+                has_perm = context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                self.add_log(f"[DEBUG] Has RECORD_AUDIO: {has_perm}")
+
                 recognizer = SpeechRecognizer.createSpeechRecognizer(context)
                 recognizer.setRecognitionListener(listener)
+                
+                self.add_log("[DEBUG] Recognizer created and listener set")
                 
                 intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)

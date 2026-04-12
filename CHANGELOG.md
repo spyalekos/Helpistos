@@ -1,3 +1,9 @@
+## 1.0.17
+- UI: Super-Logging για όλα τα Android callbacks απευθείας στην οθόνη.
+- Fix: Thread-safe `add_log` για αποφυγή θεμάτων με background tasks.
+- Diagnostics: Έλεγχος διαθεσιμότητας SpeechRecognizer και κατάστασης permissions στο log.
+- Diagnostics: Έλεγχος ύπαρξης αρχείου ήχου πριν την αναπαραγωγή.
+
 ## 1.0.16
 - Fix: Διαφορετική υλοποίηση Proxy (Listener) για Rubicon και Chaquopy.
 - Fix: Χρήση `FileInputStream` και `FileDescriptor` για αναπαραγωγή ήχου στον `MediaPlayer`.
