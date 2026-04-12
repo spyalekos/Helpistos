@@ -52,6 +52,28 @@
 4. **Clipboard:** 
    - Το `pyperclip` αποτυγχάνει σε Android. Πάντα χρησιμοποιούμε guards.
 
+5. **BeeWare Android permissions (`pyproject.toml`):**
+   - Τα δικαιώματα (όπως το `RECORD_AUDIO`) ΔΕΝ μπαίνουν πλέον στο `[tool.briefcase.app.myapp.android]` ως απλή λίστα. 
+   - Απαιτούν ρητά τη χρήση του cross-platform dict του BeeWare στο root του app config:
+     ```toml
+     [tool.briefcase.app.helpistos]
+     permission = { microphone = "Λόγος χρήσης" }
+     ```
+   - Χωρίς αυτό, το `AndroidManifest.xml` αγνοεί τις άδειες και το Android λειτουργικό κρύβει τις ρυθμίσεις αδειών από τον χρήστη.
+
+6. **Chaquopy Android Context & UI Threads:**
+   - Η κλήση `MainActivity.singleton` είναι καταργημένη/επικίνδυνη. Το σωστό Android Context λαμβάνεται **αποκλειστικά** μέσω της Toga: `self.main_window.app._impl.native` (ή `toga.App.app._impl.native`).
+   - Για να εκτελεστεί μέθοδος (όπως to STT) στο UI Thread, η Chaquopy απαιτεί τη δημιουργία ρητού proxy `java.lang.Runnable`. Αλλιώς, η κλήση `runOnUiThread(method)` θα αποτύχει σιωπηλά ή θα κρασάρει. Παράδειγμα proxy:
+     ```python
+     Runnable = autoclass("java.lang.Runnable")
+     class PythonRunnable(dynamic_proxy(Runnable)):
+         def __init__(self, target):
+             super().__init__()
+             self.target = target
+         def run(self):
+             self.target()
+     ```
+   - **Ποτέ** δεν ανανεώνουμε ενδείξεις οθόνης Toga (`self.status_label.text = ...`) απευθείας από background thread, γιατί προκαλείται άμεσο Crash (`Animators may only be run on Looper threads`). Χρησιμοποιούμε ΠΑΝΤΑ: `main_window.app.loop.call_soon_threadsafe(update_ui_func)`.
+
 ---
 *Όταν ο χρήστης ζητά αλλαγές σ' αυτό το project, ξεκινάμε με γνώμονα αυτούς τους κανόνες.*
-

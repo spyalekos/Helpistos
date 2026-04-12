@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.22")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.24")
         self.main_window.content = main_box
         self.main_window.show()
 
