@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.25")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.26")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -288,21 +288,24 @@ class Helpistos(toga.App):
         recognized_text = [None]
         error_msg = [None]
 
+        # Alias self to app_self to use inside HelperListeners
+        app_self = self
+
         # Implementation of Listener based on bridge method
         if _method == "Rubicon":
             @_dynamic_proxy("android.speech.RecognitionListener")
             class HelperListener:
-                def onReadyForSpeech(self, params): self.add_log("[DEBUG] STT: Ready")
-                def onBeginningOfSpeech(self): self.add_log("[DEBUG] STT: Beginning")
+                def onReadyForSpeech(self, params): app_self.add_log("[DEBUG] STT: Ready")
+                def onBeginningOfSpeech(self): app_self.add_log("[DEBUG] STT: Beginning")
                 def onRmsChanged(self, rmsdB): pass
                 def onBufferReceived(self, buffer): pass
-                def onEndOfSpeech(self): self.add_log("[DEBUG] STT: EndOfSpeech")
+                def onEndOfSpeech(self): app_self.add_log("[DEBUG] STT: EndOfSpeech")
                 def onError(self, error):
-                    self.add_log(f"[DEBUG] STT Error: {error}")
+                    app_self.add_log(f"[DEBUG] STT Error: {error}")
                     error_msg[0] = f"Error code {error}"
                     result_event.set()
                 def onResults(self, results):
-                    self.add_log("[DEBUG] STT: Results")
+                    app_self.add_log("[DEBUG] STT: Results")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()
@@ -312,17 +315,17 @@ class Helpistos(toga.App):
         elif _method == "Chaquopy":
             # In Chaquopy, dynamic_proxy is a base class factory
             class HelperListener(_dynamic_proxy(_autoclass("android.speech.RecognitionListener"))):
-                def onReadyForSpeech(self, params): self.add_log("[DEBUG] STT: Ready")
-                def onBeginningOfSpeech(self): self.add_log("[DEBUG] STT: Beginning")
+                def onReadyForSpeech(self, params): app_self.add_log("[DEBUG] STT: Ready")
+                def onBeginningOfSpeech(self): app_self.add_log("[DEBUG] STT: Beginning")
                 def onRmsChanged(self, rmsdB): pass
                 def onBufferReceived(self, buffer): pass
-                def onEndOfSpeech(self): self.add_log("[DEBUG] STT: EndOfSpeech")
+                def onEndOfSpeech(self): app_self.add_log("[DEBUG] STT: EndOfSpeech")
                 def onError(self, error):
-                    self.add_log(f"[DEBUG] STT Error: {error}")
+                    app_self.add_log(f"[DEBUG] STT Error: {error}")
                     error_msg[0] = f"Error code {error}"
                     result_event.set()
                 def onResults(self, results):
-                    self.add_log("[DEBUG] STT: Results")
+                    app_self.add_log("[DEBUG] STT: Results")
                     matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     if matches and matches.size() > 0: recognized_text[0] = matches.get(0)
                     result_event.set()

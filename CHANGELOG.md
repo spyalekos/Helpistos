@@ -1,3 +1,6 @@
+## 1.0.26
+- Fix: Επίλυση του `AttributeError: 'HelperListener' object has no attribute 'add_log'` κατά την εκκίνηση του STT (Chaquopy/Rubicon proxy classes scoping alias).
+
 ## 1.0.25
 - Fix: Επίλυση σφάλματος `UnboundLocalError: cannot access local variable 'Intent'` το οποίο εμφανίστηκε (μετά την επιτυχή εκχώρηση αδειών) λόγω python variable scope shadowing στη συνάρτηση έναρξης της αναγνώρισης (STT).
 
