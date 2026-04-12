@@ -1,3 +1,7 @@
+## 1.0.31
+- Fix: Προσθήκη της βιβλιοθήκης `lxml` για τη σωστή λειτουργία του BeautifulSoup XML parser (επίλυση του σφάλματος `News Error: Couldn't find a tree builder`).
+- Feature: Βελτιωμένος Assistant με δυνατότητα ανάγνωσης ειδήσεων και ώρας πλέον και με φωνή!
+
 ## 1.0.30
 - Fix: Επίλυση σφάλματος `[Errno 2] No such file or directory` στο Android μέσω χρήσης του φακέλου `cache` για την προσωρινή αποθήκευση της ομιλίας (ο φάκελος `app` είναι read-only).
 - Fix: Βελτίωση της λήψης ειδήσεων (News logic) με προσθήκη User-Agent για αποφυγή μπλοκαρίσματος από το Google News RSS.
