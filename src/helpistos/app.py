@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.31")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.32")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -450,16 +450,20 @@ class Helpistos(toga.App):
         else:
             self.add_log("Error: context is None, unreachable UI thread.")
         
-        # Wait for result (increased to 30s)
+        # Wait for result (30s)
         finished = result_event.wait(timeout=30)
-        if not finished:
+        
+        # Final decision on text: Use recognized if present, else fallback to partials
+        text_to_process = recognized_text[0] or last_partial_text[0]
+        
+        if not finished and not text_to_process:
             self.add_log("Error: Η αναγνώριση ομιλίας έληξε (Timeout).")
-        elif error_msg[0]:
+        elif error_msg[0] and not text_to_process:
             self.add_log(f"Error: {error_msg[0]}")
-        elif recognized_text[0] or last_partial_text[0]:
-            command = (recognized_text[0] or last_partial_text[0]).lower()
+        elif text_to_process:
+            command = text_to_process.lower()
             if not recognized_text[0]:
-                self.add_log(f"[DEBUG] STT: Using partial fallback: {command}")
+                self.add_log(f"[DEBUG] STT: Using partial fallback (Timeout/Error): {command}")
             
             self.add_log(f"User: {command}")
             self.process_command(command)
