@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} 1.35")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} 1.36")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -433,12 +433,14 @@ class Helpistos(toga.App):
                 intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
 
                 try:
-                    from rubicon.java import autoclass
-                    JavaLong = autoclass("java.lang.Long")
-                    # Try setting silence timeout properly (singular extra)
-                    # Value is in milliseconds (Long)
-                    intent.putExtra("android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", JavaLong(2000))
-                    intent.putExtra("android.speech.extra.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", JavaLong(1500))
+                    # Get Java Bridge from our helper
+                    _autoclass, _, _ = self.get_java_bridge()
+                    if _autoclass:
+                        JavaLong = _autoclass("java.lang.Long")
+                        # Try setting silence timeout properly (singular extra)
+                        # Value is in milliseconds (Long)
+                        intent.putExtra("android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", JavaLong(2000))
+                        intent.putExtra("android.speech.extra.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", JavaLong(1500))
                 except Exception as e:
                     self.add_log(f"[DEBUG] STT Extras Warning: {e}")
                 
@@ -494,7 +496,7 @@ class Helpistos(toga.App):
     def listen_and_process(self):
         # Clear logs for a clean session as requested
         self.output_text.value = ""
-        self.add_log(f"\n[DEBUG] App version: 1.35")
+        self.add_log(f"\n[DEBUG] App version: 1.36")
         self.add_log(f"[DEBUG] is_android: {self.is_android_flag}")
 
         if self.is_android_flag:
