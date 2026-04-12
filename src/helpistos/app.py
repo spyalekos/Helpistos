@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.32")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} 1.33")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -434,6 +434,9 @@ class Helpistos(toga.App):
                 intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.getPackageName())
                 intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, True)
                 intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+                # Shorter silence timeout (3 seconds)
+                intent.putExtra("android.speech.extras.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 3000)
+                intent.putExtra("android.speech.extras.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", 2000)
                 
                 self.add_log("[DEBUG] STT: Calling startListening")
                 app_self._recognizer.startListening(intent)
@@ -450,8 +453,8 @@ class Helpistos(toga.App):
         else:
             self.add_log("Error: context is None, unreachable UI thread.")
         
-        # Wait for result (30s)
-        finished = result_event.wait(timeout=30)
+        # Wait for result (10s)
+        finished = result_event.wait(timeout=10)
         
         # Final decision on text: Use recognized if present, else fallback to partials
         text_to_process = recognized_text[0] or last_partial_text[0]
@@ -471,44 +474,17 @@ class Helpistos(toga.App):
         self.update_status("Έλα μου. Τι θες;")
 
     def listen_and_process(self):
-        import sys
-        import os
-        
-        # Ultra-robust Android detection
-        is_android = False
-        
-        # Method 1: sys.getandroidsdk
-        if hasattr(sys, 'getandroidsdk'): 
-            is_android = True
-            print("DEBUG: Detected Android via sys.getandroidsdk")
-            
-        # Method 2: os.environ
-        if 'ANDROID_ROOT' in os.environ:
-            is_android = True
-            print("DEBUG: Detected Android via ANDROID_ROOT")
-            
-        # Method 3: sys.platform
-        if 'android' in sys.platform.lower():
-            is_android = True
-            print("DEBUG: Detected Android via sys.platform")
-            
-        # Method 4: Toga platform attribute
-        toga_platform = str(getattr(self, 'platform', 'unknown')).lower()
-        if 'android' in toga_platform:
-            is_android = True
-            print(f"DEBUG: Detected Android via Toga platform: {toga_platform}")
-
-        # Visible debug info for the user
-        self.add_log(f"\n[DEBUG] Platform: {sys.platform} / Toga: {toga_platform}")
-        self.add_log(f"[DEBUG] is_android: {is_android}")
+        # Clear logs for a clean session as requested
+        self.output_text.value = ""
+        self.add_log(f"\n[DEBUG] App version: 1.33")
+        self.add_log(f"[DEBUG] is_android: {self.is_android_flag}")
 
         if self.is_android_flag:
-            print("DEBUG: Executing Android/Native recognition path")
             self.listen_android()
             return
 
         # Desktop Fallback
-        print("DEBUG: Executing Desktop/Fallback recognition path")
+        self.add_log("DEBUG: Executing Desktop/Fallback recognition path")
         try:
             import speech_recognition as sr
         except ImportError:
@@ -606,15 +582,36 @@ class Helpistos(toga.App):
             url = "https://news.google.com/rss?hl=el&gl=GR&ceid=GR:el"
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
             resp = requests.get(url, headers=headers, timeout=10)
-            soup = BeautifulSoup(resp.text, 'xml')
+            
+            # Robust parser selection
+            try:
+                soup = BeautifulSoup(resp.content, 'xml')
+            except Exception as pe:
+                self.add_log(f"[DEBUG] XML parser failed, falling back to html.parser: {pe}")
+                soup = BeautifulSoup(resp.content, 'html.parser')
+                
             items = soup.find_all('item')[:2]
+            if not items:
+                # If 'item' didn't work in XML, maybe try finding anything with a title
+                items = soup.find_all(['title', 'item'])[:3] 
+            
             if not items:
                 self.speak("Δεν βρέθηκαν άρθρα ειδήσεων.")
                 return
 
-            headlines = [item.title.text for item in items]
-            intro = "Οι δύο κυριότερες ειδήσεις είναι: "
-            full_news = intro + ". ".join(headlines)
+            headlines = []
+            for item in items:
+                if hasattr(item, 'title') and item.title:
+                    headlines.append(item.title.text)
+                elif item.name == 'title' and item.text:
+                    headlines.append(item.text)
+            
+            if not headlines:
+                 self.speak("Δεν μπόρεσα να διαβάσω τους τίτλους.")
+                 return
+
+            intro = "Οι κυριότερες ειδήσεις είναι: "
+            full_news = intro + ". ".join(headlines[:2])
             self.speak(full_news)
         except Exception as e:
             self.add_log(f"[DEBUG] News Error: {e}")

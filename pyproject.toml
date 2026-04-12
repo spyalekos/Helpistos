@@ -1,6 +1,6 @@
 [project]
 name = "helpistos"
-version = "1.32"
+version = "1.33"
 description = "Greek Voice Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,8 +20,8 @@ helpistos = "helpistos.__main__:main"
 [tool.briefcase]
 project_name = "Helpistos"
 bundle = "com.example"
-version = "1.32"
-display_name = "Helpistos v1.32"
+version = "1.33"
+display_name = "Helpistos 1.33"
 author = "User"
 author_email = "user@example.com"
 
