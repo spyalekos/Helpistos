@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.20")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} v1.0.21")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -137,7 +137,12 @@ class Helpistos(toga.App):
                     
                     if context and context.checkSelfPermission(ManifestPerm.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED:
                         self.add_log("[DEBUG] Requesting RECORD_AUDIO at startup")
-                        context.requestPermissions([ManifestPerm.RECORD_AUDIO], 1)
+                        try:
+                            StringArray = _autoclass('java.lang.String')[:]
+                            perms = StringArray(["android.permission.RECORD_AUDIO"])
+                        except:
+                            perms = ["android.permission.RECORD_AUDIO"]
+                        context.requestPermissions(perms, 1)
             except Exception as e:
                 self.add_log(f"[DEBUG] Startup Permission Error: {e}")
 
@@ -170,6 +175,21 @@ class Helpistos(toga.App):
                 print(f"LOG: {text}")
         except:
             print(f"LOG ERROR: {text}")
+
+    def update_status(self, text):
+        def _sync_status():
+            self.status_label.text = text
+        try:
+            if hasattr(self, 'main_window') and self.main_window.app:
+                app = self.main_window.app
+                if hasattr(app, 'loop') and app.loop:
+                    app.loop.call_soon_threadsafe(_sync_status)
+                else:
+                    _sync_status()
+            else:
+                _sync_status()
+        except Exception as e:
+            print(f"STATUS ERROR: {e}")
 
     def speak(self, text):
         self.add_log(f"Assistant: {text}")
@@ -225,7 +245,7 @@ class Helpistos(toga.App):
         threading.Thread(target=run_speak, daemon=True).start()
 
     def on_listen_press(self, widget):
-        self.status_label.text = "Ακούω..."
+        self.update_status("Ακούω...")
         threading.Thread(target=self.listen_and_process, daemon=True).start()
 
     def listen_android(self):
@@ -328,7 +348,12 @@ class Helpistos(toga.App):
 
                 if not has_perm:
                     self.add_log("[DEBUG] STT: Requesting missing permission...")
-                    context.requestPermissions([ManifestPerm.RECORD_AUDIO], 1)
+                    try:
+                        StringArray = _autoclass('java.lang.String')[:]
+                        perms = StringArray(["android.permission.RECORD_AUDIO"])
+                    except:
+                        perms = ["android.permission.RECORD_AUDIO"]
+                    context.requestPermissions(perms, 1)
                     error_msg[0] = "Παρακαλώ δώστε άδεια και δοκιμάστε ξανά."
                     result_event.set()
                     return
@@ -367,7 +392,7 @@ class Helpistos(toga.App):
             self.add_log(f"User: {command}")
             self.process_command(command)
         
-        self.status_label.text = "Έλα μου. Τι θες;"
+        self.update_status("Έλα μου. Τι θες;")
 
     def listen_and_process(self):
         import sys

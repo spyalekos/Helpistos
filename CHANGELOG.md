@@ -1,3 +1,7 @@
+## 1.0.21
+- Fix: Διόρθωση Fatal Exception κατά την ενημέρωση του UI (status label) από background thread μέσω `call_soon_threadsafe`.
+- Fix: Διασφάλιση εμφάνισης του παραθύρου δικαιωμάτων μικροφώνου (Java String Array casting για Chaquopy).
+
 ## 1.0.20
 - Fix: Καθολικό `try-except` γύρω από όλη τη `listen_android` για τον εντοπισμό σιωπηρών σφαλμάτων.
 - Fix: Αντικατάσταση του παρωχημένου `MainActivity.singleton` με τον επίσημο τρόπο `toga.App.app._impl.native` για την ασφαλή απόκτηση του Android context στο Chaquopy.
