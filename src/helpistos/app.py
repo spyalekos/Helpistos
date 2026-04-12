@@ -62,7 +62,7 @@ class Helpistos(toga.App):
         main_box.add(self.output_text)
         main_box.add(listen_button)
 
-        self.main_window = toga.MainWindow(title=f"{self.formal_name} 1.33")
+        self.main_window = toga.MainWindow(title=f"{self.formal_name} 1.34")
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -434,9 +434,6 @@ class Helpistos(toga.App):
                 intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.getPackageName())
                 intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, True)
                 intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-                # Shorter silence timeout (3 seconds)
-                intent.putExtra("android.speech.extras.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 3000)
-                intent.putExtra("android.speech.extras.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", 2000)
                 
                 self.add_log("[DEBUG] STT: Calling startListening")
                 app_self._recognizer.startListening(intent)
@@ -453,8 +450,8 @@ class Helpistos(toga.App):
         else:
             self.add_log("Error: context is None, unreachable UI thread.")
         
-        # Wait for result (10s)
-        finished = result_event.wait(timeout=10)
+        # Wait for result (20s)
+        finished = result_event.wait(timeout=20)
         
         # Final decision on text: Use recognized if present, else fallback to partials
         text_to_process = recognized_text[0] or last_partial_text[0]
@@ -476,7 +473,7 @@ class Helpistos(toga.App):
     def listen_and_process(self):
         # Clear logs for a clean session as requested
         self.output_text.value = ""
-        self.add_log(f"\n[DEBUG] App version: 1.33")
+        self.add_log(f"\n[DEBUG] App version: 1.34")
         self.add_log(f"[DEBUG] is_android: {self.is_android_flag}")
 
         if self.is_android_flag:
